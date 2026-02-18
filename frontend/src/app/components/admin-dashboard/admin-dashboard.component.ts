@@ -845,9 +845,19 @@ export class AdminDashboardComponent implements OnInit {
     }
 
     const formValue = this.eventForm.value;
+
+    // Extract time from the date input
+    const dateObj = new Date(formValue.date);
+    const timeString = dateObj.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
     const eventData = {
       ...formValue,
-      location: { city: formValue.location, venue: 'TBA' }
+      time: timeString,
+      location: {
+        city: formValue.location,
+        venue: 'TBA',
+        address: formValue.location // backend requires address
+      }
     };
 
     console.log('Saving event data:', eventData);
