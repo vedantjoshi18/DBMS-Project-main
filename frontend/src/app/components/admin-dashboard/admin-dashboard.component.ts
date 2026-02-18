@@ -1,4 +1,4 @@
-import { Component, inject, OnInit } from '@angular/core';
+import { Component, inject, OnInit, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule, ReactiveFormsModule, FormBuilder, Validators, FormGroup } from '@angular/forms';
 import { AuthService } from '../../services/auth.service';
@@ -144,7 +144,8 @@ import { MatIconModule } from '@angular/material/icon';
                     <td>
                       <div class="event-cell">
                         <div class="event-thumb">
-                          <mat-icon>image</mat-icon>
+                          <img *ngIf="event.image" [src]="event.image" alt="" style="width: 100%; height: 100%; object-fit: cover; border-radius: 10px;">
+                          <mat-icon *ngIf="!event.image">image</mat-icon>
                         </div>
                         <div class="event-text">
                           <span class="title">{{ event.title }}</span>
@@ -174,7 +175,7 @@ import { MatIconModule } from '@angular/material/icon';
                     <td>
                       <div class="action-buttons">
                         <button class="btn-icon sm" (click)="openEventModal(event)"><mat-icon>edit</mat-icon></button>
-                        <button class="btn-icon sm delete" (click)="deleteEvent(event.id)"><mat-icon>delete</mat-icon></button>
+                        <button class="btn-icon sm delete" (click)="deleteEvent(event._id)"><mat-icon>delete</mat-icon></button>
                       </div>
                     </td>
                   </tr>
@@ -593,6 +594,17 @@ import { MatIconModule } from '@angular/material/icon';
     .event-text .title { font-weight: 600; font-size: 1rem; }
     .event-text .subtitle { font-size: 0.85rem; color: var(--text-muted); }
 
+    .info-cell {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .info-cell .sub-text {
+      font-size: 0.85rem;
+      color: var(--text-muted);
+    }
+
     .status-pill {
       display: inline-flex; align-items: center; gap: 6px;
       padding: 6px 12px;
@@ -689,6 +701,7 @@ export class AdminDashboardComponent implements OnInit {
   authService = inject(AuthService);
   router = inject(Router);
   fb = inject(FormBuilder);
+  cdr = inject(ChangeDetectorRef);
 
   constructor() {
     this.eventForm = this.fb.group({
@@ -730,6 +743,7 @@ export class AdminDashboardComponent implements OnInit {
       next: (res) => {
         console.log('Stats loaded:', res);
         this.stats = res.data;
+        this.cdr.detectChanges();
       },
       error: (err) => console.error('Error loading stats:', err)
     });
@@ -741,6 +755,7 @@ export class AdminDashboardComponent implements OnInit {
       next: (res) => {
         console.log('Events loaded:', res);
         this.events = res;
+        this.cdr.detectChanges();
       },
       error: (err) => console.error('Error loading events:', err)
     });
@@ -752,6 +767,7 @@ export class AdminDashboardComponent implements OnInit {
       next: (res) => {
         console.log('Users loaded:', res);
         this.users = res.data;
+        this.cdr.detectChanges();
       },
       error: (err) => console.error('Error loading users:', err)
     });
@@ -759,18 +775,28 @@ export class AdminDashboardComponent implements OnInit {
 
   deleteUser(id: string) {
     if (confirm('Are you sure you want to delete this user?')) {
-      this.adminService.deleteUser(id).subscribe(() => {
-        this.loadUsers();
-        this.loadStats();
+      console.log('Deleting user:', id);
+      this.adminService.deleteUser(id).subscribe({
+        next: () => {
+          console.log('User deleted successfully');
+          this.loadUsers();
+          this.loadStats();
+        },
+        error: (err) => console.error('Error deleting user:', err)
       });
     }
   }
 
   deleteEvent(id: any) {
     if (confirm('Are you sure you want to delete this event?')) {
-      this.eventService.deleteEvent(id).subscribe(() => {
-        this.loadEvents();
-        this.loadStats();
+      console.log('Deleting event:', id);
+      this.eventService.deleteEvent(id).subscribe({
+        next: () => {
+          console.log('Event deleted successfully');
+          this.loadEvents();
+          this.loadStats();
+        },
+        error: (err) => console.error('Error deleting event:', err)
       });
     }
   }
@@ -809,7 +835,10 @@ export class AdminDashboardComponent implements OnInit {
   }
 
   saveEvent() {
-    if (this.eventForm.invalid) return;
+    if (this.eventForm.invalid) {
+      console.warn('Form invalid:', this.eventForm.errors);
+      return;
+    }
 
     const formValue = this.eventForm.value;
     const eventData = {
@@ -817,16 +846,26 @@ export class AdminDashboardComponent implements OnInit {
       location: { city: formValue.location, venue: 'TBA' }
     };
 
+    console.log('Saving event data:', eventData);
+
     if (this.isEditing && this.editingId) {
-      this.eventService.updateEvent(this.editingId, eventData).subscribe(() => {
-        this.closeEventModal();
-        this.loadEvents();
+      this.eventService.updateEvent(this.editingId, eventData).subscribe({
+        next: () => {
+          console.log('Event updated successfully');
+          this.closeEventModal();
+          this.loadEvents();
+        },
+        error: (err) => console.error('Error updating event:', err)
       });
     } else {
-      this.eventService.createEvent(eventData).subscribe(() => {
-        this.closeEventModal();
-        this.loadEvents();
-        this.loadStats();
+      this.eventService.createEvent(eventData).subscribe({
+        next: () => {
+          console.log('Event created successfully');
+          this.closeEventModal();
+          this.loadEvents();
+          this.loadStats();
+        },
+        error: (err) => console.error('Error creating event:', err)
       });
     }
   }
