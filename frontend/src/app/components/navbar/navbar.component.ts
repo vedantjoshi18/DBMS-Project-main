@@ -30,6 +30,7 @@ import { AuthService } from '../../services/auth.service';
           </ul>
         </div>
         
+
         <button class="btn-pill-login" *ngIf="!isLoggedIn" (click)="toggleLogin()">Register</button>
         <button class="btn-pill-login" *ngIf="isLoggedIn" (click)="logout()">Logout</button>
         
@@ -40,6 +41,11 @@ import { AuthService } from '../../services/auth.service';
         </button>
       </div>
     </nav>
+    
+    <!-- Floating Admin Button -->
+    <button class="admin-floating-btn" *ngIf="isAdmin" routerLink="/admin" title="Admin Dashboard">
+      <mat-icon>admin_panel_settings</mat-icon>
+    </button>
     
     <!-- Unified Login/Signup Modal -->
     <div class="login-modal" *ngIf="showLogin">
@@ -708,6 +714,37 @@ import { AuthService } from '../../services/auth.service';
         display: none;
       }
     }
+
+    /* Floating Admin Button */
+    .admin-floating-btn {
+      position: fixed;
+      bottom: 30px;
+      right: 30px;
+      width: 60px;
+      height: 60px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+      color: white;
+      border: none;
+      box-shadow: 0 4px 20px rgba(59, 130, 246, 0.4);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      z-index: 2000;
+      transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    }
+
+    .admin-floating-btn:hover {
+      transform: scale(1.1) rotate(5deg);
+      box-shadow: 0 8px 25px rgba(59, 130, 246, 0.6);
+    }
+
+    .admin-floating-btn mat-icon {
+      font-size: 28px;
+      width: 28px;
+      height: 28px;
+    }
   `]
 })
 export class NavbarComponent {
@@ -718,6 +755,7 @@ export class NavbarComponent {
   isNavVisible = true;
   lastScrollY = 0;
   showMobileMenu = false;
+  isAdmin = false;
 
   // Login modal properties
   showLogin = false;
@@ -753,6 +791,12 @@ export class NavbarComponent {
     // Sync with AuthService login state
     this.authService.isLoggedIn$.subscribe(isLoggedIn => {
       this.isLoggedIn = isLoggedIn;
+      // Check admin status whenever login state changes
+      this.checkAdminStatus();
+    });
+
+    this.authService.currentUser$.subscribe(() => {
+      this.checkAdminStatus();
     });
 
     // Listen for login modal open requests
@@ -777,6 +821,10 @@ export class NavbarComponent {
 
   toggleMobileMenu() {
     this.showMobileMenu = !this.showMobileMenu;
+  }
+
+  checkAdminStatus() {
+    this.isAdmin = this.authService.isAdmin();
   }
 
   generateCaptcha() {
@@ -864,9 +912,7 @@ export class NavbarComponent {
     });
   }
 
-  get isAdmin(): boolean {
-    return this.authService.isAdmin();
-  }
+
 
   logout() {
     this.authService.logout();

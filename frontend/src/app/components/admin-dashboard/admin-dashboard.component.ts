@@ -5,13 +5,13 @@ import { AuthService } from '../../services/auth.service';
 import { AdminService } from '../../services/admin.service';
 import { EventService } from '../../services/event.service';
 import { Event } from '../../models/event.model';
-import { Router } from '@angular/router';
+import { RouterModule, Router } from '@angular/router';
 import { MatIconModule } from '@angular/material/icon';
 
 @Component({
   selector: 'app-admin-dashboard',
   standalone: true,
-  imports: [CommonModule, FormsModule, ReactiveFormsModule, MatIconModule],
+  imports: [CommonModule, FormsModule, ReactiveFormsModule, MatIconModule, RouterModule],
   template: `
     <div class="admin-layout">
       <!-- Glassmorphic Sidebar -->
@@ -35,6 +35,10 @@ import { MatIconModule } from '@angular/material/icon';
             <span>Users</span>
           </a>
           <hr class="nav-divider">
+          <a routerLink="/events" class="nav-item">
+            <mat-icon>home</mat-icon>
+            <span>Go to Website</span>
+          </a>
           <a (click)="logout()" class="nav-item logout">
             <mat-icon>logout</mat-icon>
             <span>Logout</span>
@@ -849,13 +853,22 @@ export class AdminDashboardComponent implements OnInit {
     console.log('Saving event data:', eventData);
 
     if (this.isEditing && this.editingId) {
+      console.log(`Updating event with ID: ${this.editingId}`);
+      if (this.editingId.length < 10) {
+        console.warn('Warning: Editing ID seems too short for a MongoDB ObjectId:', this.editingId);
+      }
+
       this.eventService.updateEvent(this.editingId, eventData).subscribe({
-        next: () => {
-          console.log('Event updated successfully');
+        next: (res) => {
+          console.log('Event updated successfully:', res);
           this.closeEventModal();
           this.loadEvents();
+          this.loadStats();
         },
-        error: (err) => console.error('Error updating event:', err)
+        error: (err) => {
+          console.error('Error updating event:', err);
+          this.cdr.detectChanges(); // Update view in case we show error
+        }
       });
     } else {
       this.eventService.createEvent(eventData).subscribe({
