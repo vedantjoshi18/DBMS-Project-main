@@ -1,0 +1,30 @@
+{
+    "version": 2,
+    "builds": [
+        {
+            "src": "backend/server.js",
+            "use": "@vercel/node"
+        },
+        {
+            "src": "frontend/package.json",
+            "use": "@vercel/static-build",
+            "config": {
+                "distDir": "dist/event-manager/browser"
+            }
+        }
+    ],
+    "routes": [
+        {
+            "src": "/api/(.*)",
+            "dest": "/backend/server.js"
+        },
+        {
+            "src": "/(.*\\.(js|css|png|jpg|svg|ico|json|woff2|woff|ttf))",
+            "dest": "/frontend/$1"
+        },
+        {
+            "src": "/(.*)",
+            "dest": "/frontend/index.html"
+        }
+    ]
+}

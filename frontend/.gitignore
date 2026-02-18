@@ -1,0 +1,26 @@
+# Compiled output
+/dist
+/tmp
+/out-tsc
+/bazel-out
+
+# Node modules
+/node_modules
+package-lock.json
+
+# Visual Studio Code
+.vscode/*
+
+# Miscellaneous
+/.angular
+
+# System files
+.DS_Store
+Thumbs.db
+
+# Environment files
+.env
+
+# Build files
+*.js.map
+*.css.map

@@ -1,0 +1,10 @@
+# IDE
+.vscode/
+
+# Logs (project-wide)
+*.log
+logs/
+
+node_modules/
+
+.env

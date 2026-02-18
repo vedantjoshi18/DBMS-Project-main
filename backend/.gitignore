@@ -1,0 +1,14 @@
+# Dependencies
+node_modules/
+package-lock.json
+
+# Environment variables
+.env
+
+# Logs
+logs/
+
+# Temporary files
+*.tmp
+*.temp
+.cache/
