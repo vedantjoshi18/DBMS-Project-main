@@ -15,22 +15,22 @@ import { MatIconModule } from '@angular/material/icon';
   template: `
     <div class="admin-layout">
       <!-- Glassmorphic Sidebar -->
-      <aside class="sidebar" [class.active]="isSidebarOpen">
+      <aside class="sidebar">
         <div class="logo-container">
           <span class="logo-text">Event<span class="logo-accent">Hub</span></span>
           <span class="badge">Admin</span>
         </div>
         
         <nav class="nav-menu">
-          <a (click)="currentView = 'dashboard'; closeSidebar()" [class.active]="currentView === 'dashboard'" class="nav-item">
+          <a (click)="currentView = 'dashboard'" [class.active]="currentView === 'dashboard'" class="nav-item">
             <mat-icon>dashboard</mat-icon>
             <span>Overview</span>
           </a>
-          <a (click)="currentView = 'events'; closeSidebar()" [class.active]="currentView === 'events'" class="nav-item">
+          <a (click)="currentView = 'events'" [class.active]="currentView === 'events'" class="nav-item">
             <mat-icon>event</mat-icon>
             <span>Events</span>
           </a>
-          <a (click)="currentView = 'users'; closeSidebar()" [class.active]="currentView === 'users'" class="nav-item">
+          <a (click)="currentView = 'users'" [class.active]="currentView === 'users'" class="nav-item">
             <mat-icon>group</mat-icon>
             <span>Users</span>
           </a>
@@ -53,18 +53,13 @@ import { MatIconModule } from '@angular/material/icon';
               <span class="role">Super Admin</span>
             </div>
           </div>
-
-
-      <!-- Sidebar Overlay -->
-      <div class="sidebar-overlay" *ngIf="isSidebarOpen" (click)="closeSidebar()"></div>
+        </div>
+      </aside>
 
       <!-- Main Content Area -->
       <main class="main-content">
         <!-- Header -->
         <header class="top-bar">
-          <button class="mobile-toggle" (click)="toggleSidebar()">
-            <mat-icon>menu</mat-icon>
-          </button>
           <h1 class="page-title">{{ getTitle() }}</h1>
           <div class="actions">
             <button class="btn-icon"><mat-icon>notifications</mat-icon></button>
@@ -687,78 +682,6 @@ import { MatIconModule } from '@angular/material/icon';
 
     @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
     @keyframes scaleIn { from { opacity: 0; transform: scale(0.95); } to { opacity: 1; transform: scale(1); } }
-
-    /* Mobile Responsiveness */
-    @media (max-width: 768px) {
-      .sidebar {
-        position: fixed;
-        left: -100%;
-        top: 0;
-        bottom: 0;
-        width: 260px;
-        transition: left 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-        box-shadow: 10px 0 30px rgba(0,0,0,0.5);
-      }
-      
-      .sidebar.active {
-        left: 0;
-      }
-
-      .sidebar-overlay {
-        position: fixed;
-        inset: 0;
-        background: rgba(0,0,0,0.6);
-        backdrop-filter: blur(4px);
-        z-index: 9;
-        animation: fadeIn 0.3s;
-      }
-
-      .mobile-toggle {
-        display: flex !important;
-      }
-
-      .top-bar {
-        padding: 0 20px;
-        gap: 16px;
-      }
-      
-      .page-title {
-        font-size: 1.4rem;
-        white-space: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis;
-      }
-
-      .dashboard-grid {
-        grid-template-columns: 1fr;
-      }
-      
-      .wide-card {
-        grid-column: span 1;
-      }
-      
-      .grid-2 {
-        grid-template-columns: 1fr;
-      }
-      
-      .content-scroll {
-        padding: 20px;
-      }
-      
-      .glass-modal {
-        padding: 24px;
-        width: 95%;
-      }
-    }
-
-    .mobile-toggle {
-      display: none;
-      background: none;
-      border: none;
-      color: white;
-      cursor: pointer;
-      padding: 8px;
-    }
   `]
 })
 export class AdminDashboardComponent implements OnInit {
@@ -773,7 +696,6 @@ export class AdminDashboardComponent implements OnInit {
   users: any[] = [];
 
   showEventModal = false;
-  isSidebarOpen = false;
   isEditing = false;
   editingId: string | null = null;
   eventForm: FormGroup;
@@ -981,13 +903,5 @@ export class AdminDashboardComponent implements OnInit {
   logout() {
     this.authService.logout();
     this.router.navigate(['/']);
-  }
-
-  toggleSidebar() {
-    this.isSidebarOpen = !this.isSidebarOpen;
-  }
-
-  closeSidebar() {
-    this.isSidebarOpen = false;
   }
 }
