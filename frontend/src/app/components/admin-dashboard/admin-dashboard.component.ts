@@ -881,14 +881,21 @@ export class AdminDashboardComponent implements OnInit {
         }
       });
     } else {
+      console.log('Creating new event...');
       this.eventService.createEvent(eventData).subscribe({
-        next: () => {
-          console.log('Event created successfully');
+        next: (res) => {
+          console.log('Event created successfully:', res);
           this.closeEventModal();
           this.loadEvents();
           this.loadStats();
         },
-        error: (err) => console.error('Error creating event:', err)
+        error: (err) => {
+          console.error('Error creating event:', err);
+          if (err.error?.message) {
+            alert(`Failed to create event: ${err.error.message}`);
+          }
+          this.cdr.detectChanges();
+        }
       });
     }
   }
