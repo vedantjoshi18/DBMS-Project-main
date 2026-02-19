@@ -53,16 +53,7 @@ import { MatIconModule } from '@angular/material/icon';
               <span class="role">Super Admin</span>
             </div>
           </div>
-        <div class="sidebar-footer">
-          <div class="admin-profile">
-            <div class="avatar">A</div>
-            <div class="info">
-              <span class="name">Admin User</span>
-              <span class="role">Super Admin</span>
-            </div>
-          </div>
-        </div>
-      </aside>
+
 
       <!-- Sidebar Overlay -->
       <div class="sidebar-overlay" *ngIf="isSidebarOpen" (click)="closeSidebar()"></div>
