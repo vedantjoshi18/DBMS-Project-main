@@ -47,6 +47,41 @@ import { AuthService } from '../../services/auth.service';
       <mat-icon>admin_panel_settings</mat-icon>
     </button>
     
+    <!-- Mobile Menu Overlay -->
+    <div class="mobile-menu-overlay" *ngIf="showMobileMenu" (click)="toggleMobileMenu()">
+      <div class="mobile-menu glass-card" (click)="$event.stopPropagation()">
+        <button class="menu-close" (click)="toggleMobileMenu()">
+          <mat-icon>close</mat-icon>
+        </button>
+        
+        <div class="mobile-logo">
+          <span class="logo-text">Event<span class="logo-accent">Hub</span></span>
+        </div>
+
+        <ul class="mobile-nav-links">
+          <li><a (click)="scrollToSection('about'); toggleMobileMenu()" class="mobile-link">About</a></li>
+          <li><a routerLink="/events" class="mobile-link">Events</a></li>
+          <li><a (click)="scrollToSection('categories'); toggleMobileMenu()" class="mobile-link">Categories</a></li>
+          <li><a (click)="handleProfileClick(); toggleMobileMenu()" class="mobile-link">Profile</a></li>
+          <li><a (click)="scrollToSection('contact'); toggleMobileMenu()" class="mobile-link">Contact</a></li>
+        </ul>
+
+        <div class="mobile-actions">
+           <button class="btn btn-primary btn-full" *ngIf="!isLoggedIn" (click)="toggleLogin(); toggleMobileMenu()">
+             <mat-icon>login</mat-icon> Register / Login
+           </button>
+           
+           <button class="btn btn-outline btn-full" *ngIf="isAdmin" routerLink="/admin" (click)="toggleMobileMenu()">
+             <mat-icon>admin_panel_settings</mat-icon> Admin Dashboard
+           </button>
+           
+           <button class="btn btn-outline btn-full" *ngIf="isLoggedIn" (click)="logout(); toggleMobileMenu()">
+             <mat-icon>logout</mat-icon> Logout
+           </button>
+        </div>
+      </div>
+    </div>
+    
     <!-- Unified Login/Signup Modal -->
     <div class="login-modal" *ngIf="showLogin">
       <div class="modal-content glass-card">
@@ -230,6 +265,117 @@ import { AuthService } from '../../services/auth.service';
     .navbar.scrolled .nav-container {
       padding: 10px 20px;
       gap: 32px;
+    }
+
+    /* Mobile Menu Styles */
+    .mobile-menu-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100vh;
+      background: rgba(0, 0, 0, 0.6);
+      backdrop-filter: blur(5px);
+      z-index: 2100;
+      opacity: 0;
+      animation: fadeIn 0.3s forwards;
+      display: flex;
+      justify-content: flex-end;
+    }
+
+    .mobile-menu {
+      width: 80%;
+      max-width: 300px;
+      height: 100%;
+      background: rgba(20, 20, 30, 0.95);
+      backdrop-filter: blur(20px);
+      border-left: 1px solid rgba(255, 255, 255, 0.1);
+      padding: 30px;
+      display: flex;
+      flex-direction: column;
+      transform: translateX(100%);
+      animation: slideIn 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+      box-shadow: -10px 0 30px rgba(0,0,0,0.5);
+    }
+
+    @keyframes slideIn {
+      to { transform: translateX(0); }
+    }
+
+    .menu-close {
+      align-self: flex-end;
+      background: none;
+      border: none;
+      color: white;
+      cursor: pointer;
+      padding: 8px;
+    }
+
+    .mobile-logo {
+      margin-bottom: 40px;
+      text-align: center;
+    }
+
+    .mobile-nav-links {
+      list-style: none;
+      padding: 0;
+      margin: 0 0 40px 0;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+
+    .mobile-link {
+      font-size: 1.2rem;
+      color: rgba(255, 255, 255, 0.8);
+      text-decoration: none;
+      font-weight: 500;
+      display: block;
+      transition: color 0.3s;
+    }
+
+    .mobile-link:hover {
+      color: #dc2626;
+      padding-left: 10px;
+    }
+
+    .mobile-actions {
+      margin-top: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 15px;
+    }
+
+    /* Responsive Adjustments */
+    @media (max-width: 768px) {
+      .navbar {
+        width: 90%;
+        top: 15px;
+      }
+      
+      .nav-container {
+         justify-content: space-between;
+         gap: 0;
+         padding: 10px 15px;
+         width: 100%;
+      }
+
+      .logo-text {
+        font-size: 1.2rem;
+      }
+      
+      .nav-inner-pill {
+        display: none; /* Hide main links on mobile */
+      }
+      
+      .btn-pill-login {
+        display: none; /* Hide login button on mobile header */
+      }
+
+      .mobile-menu-btn {
+        display: flex;
+        padding: 0;
+      }
     }
     
     /* Logo */

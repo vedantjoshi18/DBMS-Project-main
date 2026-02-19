@@ -564,7 +564,7 @@ import { MatIconModule } from '@angular/material/icon';
       background: rgba(30, 30, 40, 0.4);
       border: 1px solid var(--glass-border);
       border-radius: 20px;
-      overflow: hidden;
+      overflow-x: auto;
     }
 
     .glass-table { width: 100%; border-collapse: collapse; }
