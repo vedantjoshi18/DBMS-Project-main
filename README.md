@@ -1,158 +1,156 @@
-# EventManager
+# 🎫 EventFlow: Modern Event Management Platform
 
-This project was generated using [Angular CLI](https://github.com/angular/angular-cli) version 21.0.2.
+[![Angular](https://img.shields.io/badge/Angular-v21-DD0031?style=flat-square&logo=angular)](https://angular.io/)
+[![Node.js](https://img.shields.io/badge/Node.js-v20+-339933?style=flat-square&logo=node.js)](https://nodejs.org/)
+[![MongoDB](https://img.shields.io/badge/MongoDB-Latest-47A248?style=flat-square&logo=mongodb)](https://www.mongodb.com/)
+[![Express](https://img.shields.io/badge/Express-v5-000000?style=flat-square&logo=express)](https://expressjs.com/)
+[![License](https://img.shields.io/badge/License-ISC-blue.svg?style=flat-square)](LICENSE)
 
-## Development server
+EventFlow is a comprehensive, full-stack event management solution designed for seamless event discovery, ticket booking, and administrative oversight. Built with the **MEAN stack** (MongoDB, Express, Angular 21, Node.js), it features a highly responsive UI with 3D particle effects and a robust RESTful API.
 
-To start a local development server, run:
+---
 
+## 🚀 Key Features
+
+### 👤 For Users
+- **Dynamic Event Discovery**: Browse events with real-time category filtering and search.
+- **Interactive UI**: Immersive experience powered by Three.js and tsparticles.
+- **Secure Authentication**: JWT-based login and registration with encrypted passwords (bcryptjs).
+- **Seamless Booking**: Real-time ticket availability tracking and instant booking.
+- **User Profile**: Personal dashboard to manage bookings and cancel tickets.
+- **Contact Support**: Integrated contact form for user inquiries.
+
+### 🛡️ For Administrators
+- **Executive Dashboard**: High-level overview of platform statistics (total users, events, and bookings).
+- **Event Management**: Full CRUD capabilities for managing event details, pricing, and schedules.
+- **User Oversight**: Monitor and manage registered users and their activity.
+- **Booking Management**: Comprehensive view of all platform-wide transactions.
+
+---
+
+## 🛠️ Technical Stack
+
+**Frontend:**
+- **Framework**: Angular 21 (Signals, Standalone Components)
+- **Styling**: Angular Material, SCSS, Vanilla CSS
+- **Visuals**: Three.js (3D backgrounds), tsparticles
+- **State Management**: RxJS
+
+**Backend:**
+- **Runtime**: Node.js
+- **Framework**: Express 5
+- **Database**: MongoDB with Mongoose ODM
+- **Security**: JSON Web Tokens (JWT), bcryptjs
+- **Mail**: Nodemailer for system notifications
+
+---
+
+## 📂 Project Structure
+
+```text
+event-management-app/
+├── backend/                # Express API & Server
+│   ├── scripts/            # Database seeding & utility scripts
+│   ├── src/
+│   │   ├── config/         # DB & Environment configurations
+│   │   ├── controllers/    # Request handlers (logic)
+│   │   ├── middleware/     # Auth & Error handling
+│   │   ├── models/         # Mongoose Schemas
+│   │   ├── routes/         # API Endpoints
+│   │   └── utils/          # Helper functions
+│   └── server.js           # Main entry point
+├── frontend/               # Angular 21 SPA
+│   ├── src/
+│   │   ├── app/
+│   │   │   ├── components/ # Reusable UI components
+│   │   │   ├── guards/     # Auth & Admin route protection
+│   │   │   ├── services/   # API & Auth logic
+│   │   │   └── models/     # Type definitions
+│   │   └── assets/         # Static assets & 3rd party libs
+│   └── angular.json
+└── vercel.json             # Deployment configuration
+```
+
+---
+
+## 🏁 Getting Started
+
+### Prerequisites
+- **Node.js** (v20 or higher recommended)
+- **MongoDB** (Local instance or MongoDB Atlas)
+- **NPM** (v10 or higher)
+
+### 1. Clone the Repository
 ```bash
-ng serve
+git clone https://github.com/your-username/event-management-app.git
+cd event-management-app
 ```
 
-Once the server is running, open your browser and navigate to `http://localhost:4200/`. The application will automatically reload whenever you modify any of the source files.
-
-## Code scaffolding
-
-Angular CLI includes powerful code scaffolding tools. To generate a new component, run:
-
-```bash
-ng generate component component-name
-```
-
-For a complete list of available schematics (such as `components`, `directives`, or `pipes`), run:
-
-```bash
-ng generate --help
-```
-
-## Building
-
-To build the project run:
-
-# Event Manager (DBMS Project)
-
-A full-stack event management application with an Express/MongoDB backend and an Angular frontend. This repository contains the backend API (Node.js + Express + Mongoose) and an Angular 21 frontend UI.
-
-## Key Features
-
-- User authentication (JWT)
-- Event creation and listing
-- Booking management
-- Seed script to populate example data
-- Angular-based frontend with Material design
-
-## Tech Stack
-
-- Backend: Node.js, Express, MongoDB (Mongoose)
-- Frontend: Angular 21, Angular Material
-- Auth: JSON Web Tokens (JWT)
-
-## Repo Layout
-
-- `backend/` — Express API
-	- `server.js` — app entry
-	- `src/controllers/` — route handlers
-	- `src/models/` — Mongoose models
-	- `src/routes/` — Express routes
-	- `src/middleware/` — middleware (auth, errors)
-	- `src/config/database.js` — MongoDB connection (uses `MONGODB_URI`)
-	- `scripts/seedData.js` — seed example data
-
-- `frontend/` — Angular app
-	- `src/app/` — components, services, routes
-	- uses `ng serve` for development
-
-## Prerequisites
-
-- Node.js (v16+ recommended)
-- npm
-- MongoDB instance (local or Atlas)
-- Angular CLI (optional for local dev: `npm i -g @angular/cli`)
-
-## Environment Variables (backend)
-
-Create a `.env` file in `backend/` with at least:
-
-```
-MONGODB_URI=<your-mongodb-connection-string>
-JWT_SECRET=<a-strong-secret>
-JWT_EXPIRE=7d
-PORT=5000
-FRONTEND_URL=http://localhost:4200
-NODE_ENV=development
-```
-
-## Install & Run (Backend)
-
-1. Install dependencies:
-
+### 2. Backend Configuration
+Navigate to the backend directory and set up your environment variables:
 ```bash
 cd backend
 npm install
 ```
+Create a `.env` file in `backend/`:
+```env
+MONGODB_URI=your_mongodb_connection_string
+JWT_SECRET=your_ultra_secure_secret
+PORT=5000
+EMAIL_USER=your_email@gmail.com
+EMAIL_APP_PASSWORD=your_app_password
+```
 
-2. Seed example data (optional):
-
+### 3. Database Seeding (Optional)
+Populate your database with sample events, users, and an admin account:
 ```bash
 npm run seed
 ```
 
-3. Start the server:
-
-- Production: `npm start` (runs `node server.js`)
-- Development: `npm run dev` (runs `nodemon server.js`)
-
-The backend listens on `PORT` (default `5000`) and exposes endpoints under `/api/*`.
-
-## Install & Run (Frontend)
-
-1. Install dependencies:
-
+### 4. Frontend Configuration
+Open a new terminal, navigate to the frontend directory:
 ```bash
 cd frontend
 npm install
 ```
 
-2. Start the dev server:
-
+### 5. Running the Application
+**Start Backend:**
 ```bash
-npm start
+cd backend
+npm run dev
 ```
 
-This runs `ng serve` and serves the app at `http://localhost:4200` by default.
-
-Note: The frontend also includes a convenience `npm run server` script to run a `json-server` mock API (`db.json`) on port `3000` if needed.
-
-## Useful Scripts
-
-Backend (`backend/package.json`):
-
-- `npm start` — start production server
-- `npm run dev` — start dev server with `nodemon`
-- `npm run seed` — seed example data
-- `npm run get-ip` — helper script to log public IP
-
-Frontend (`frontend/package.json`):
-
-- `npm start` — `ng serve` (development)
-- `npm run build` — build production assets
-- `npm run server` — run `json-server` mock API on port 3000
-
-## Testing
-
-- Backend: No automated tests included by default.
-- Frontend: Angular unit tests can be run with `npm test` inside `frontend/`.
-
-## Tips & Next Steps
-
-- Use a hosted MongoDB (Atlas) for easy remote testing; set `MONGODB_URI` accordingly.
-- Consider adding `docker-compose` for local dev with MongoDB.
-- Add CI and test coverage for backend controllers and frontend components.
+**Start Frontend:**
+```bash
+cd frontend
+npm start
+```
+The application will be available at `http://localhost:4200`.
 
 ---
 
-If you want, I can also:
+## 🚢 Deployment
 
-- Add a sample `.env.example` in `backend/`.
-- Create `CONTRIBUTING.md` with development guidelines.
+The project is pre-configured for deployment on **Vercel**. 
+
+1. Push your code to a GitHub repository.
+2. Connect the repository to Vercel.
+3. Add the environment variables from your `.env` file to the Vercel project settings.
+4. Vercel will automatically detect the `vercel.json` and deploy both the backend and the built frontend.
+
+---
+
+## 🔒 Security
+- **JWT-Only Routes**: Sensitive API endpoints are protected via custom `authMiddleware`.
+- **Password Hashing**: All user passwords are salted and hashed using `bcryptjs`.
+- **Role-Based Access Control (RBAC)**: Distinct guards for user and admin namespaces.
+
+## 🤝 Contributing
+Contributions are welcome! Please feel free to submit a Pull Request.
+
+## 📄 License
+This project is licensed under the **ISC License**.
+
+---
+*Created with ❤️ by [Vedant Joshi](https://github.com/vedant-joshi)*

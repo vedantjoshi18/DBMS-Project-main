@@ -16,7 +16,7 @@
     "nodejs",
     "express"
   ],
-  "author": "jewinjinson",
+  "author": "Vedant Joshi",
   "license": "ISC",
   "type": "commonjs",
   "dependencies": {
