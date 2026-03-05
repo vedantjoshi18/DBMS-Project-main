@@ -1,4 +1,4 @@
-# 🎫 EventFlow: Modern Event Management Platform
+# 🎫 EventHub: Modern Event Management Platform
 
 [![Angular](https://img.shields.io/badge/Angular-v21-DD0031?style=flat-square&logo=angular)](https://angular.io/)
 [![Node.js](https://img.shields.io/badge/Node.js-v20+-339933?style=flat-square&logo=node.js)](https://nodejs.org/)
@@ -153,4 +153,4 @@ Contributions are welcome! Please feel free to submit a Pull Request.
 This project is licensed under the **ISC License**.
 
 ---
-*Created with ❤️ by [Vedant Joshi](https://github.com/vedant-joshi)*
+*[Vedant Joshi](https://github.com/vedant-joshi)*
