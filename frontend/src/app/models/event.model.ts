@@ -1,15 +1,18 @@
+import { OrganizerGroup } from './organizer-group.model';
+
 export interface Event {
   _id?: string;
   id?: number; // For backward compatibility
   title: string;
   date: string | Date;
   time?: string;
-  category: string;
+  category: 'Technical' | 'Cultural' | 'Sports' | 'Academic' | 'Workshop' | 'Seminar' | 'Competition' | 'Social' | 'Other';
   ticketPrice: number;
   price?: number; // For backward compatibility
   description: string;
   image: string;
   isFeatured?: boolean;
+  isHot?: boolean;
   status: 'upcoming' | 'ongoing' | 'completed' | 'cancelled' | 'open' | 'sold-out'; // Support both formats
   location?: {
     venue: string;
@@ -22,6 +25,8 @@ export interface Event {
     email: string;
     phone?: string;
   };
+  organizerGroup?: OrganizerGroup | string;
+  organizerGroupType?: 'club' | 'department';
   maxAttendees: number;
   currentAttendees?: number;
   createdAt?: string | Date;

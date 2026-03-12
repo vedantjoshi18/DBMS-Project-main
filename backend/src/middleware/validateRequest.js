@@ -7,7 +7,7 @@ exports.validateRegister = (req, res, next) => {
     errors.push('Name is required');
   }
 
-  if (!email || !email.match(/^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w{2,3})+$/)) {
+  if (!email?.match(/^\w+([.-]?\w+)*@\w+([.-]?\w+)*(\.\w{2,3})+$/)) {
     errors.push('Valid email is required');
   }
 
@@ -52,8 +52,30 @@ exports.validateLogin = (req, res, next) => {
 
 // Validate event creation
 exports.validateEvent = (req, res, next) => {
-  const { title, description, category, date, time, location, maxAttendees } = req.body;
+  const {
+    title,
+    description,
+    category,
+    date,
+    time,
+    location,
+    maxAttendees,
+    organizerGroup,
+    isHot,
+    isFeatured
+  } = req.body;
   const errors = [];
+  const validCategories = [
+    'Technical',
+    'Cultural',
+    'Sports',
+    'Academic',
+    'Workshop',
+    'Seminar',
+    'Competition',
+    'Social',
+    'Other'
+  ];
 
   if (!title || title.trim().length === 0) {
     errors.push('Title is required');
@@ -65,6 +87,12 @@ exports.validateEvent = (req, res, next) => {
 
   if (!category) {
     errors.push('Category is required');
+  } else if (!validCategories.includes(category)) {
+    errors.push('Invalid category selected');
+  }
+
+  if (!organizerGroup || typeof organizerGroup !== 'string' || organizerGroup.trim().length === 0) {
+    errors.push('Organizer group is required');
   }
 
   if (!date) {
@@ -84,6 +112,14 @@ exports.validateEvent = (req, res, next) => {
 
   if (!maxAttendees || maxAttendees < 1) {
     errors.push('Valid maximum attendees is required');
+  }
+
+  if (isHot !== undefined && typeof isHot !== 'boolean') {
+    errors.push('isHot must be a boolean');
+  }
+
+  if (isFeatured !== undefined && typeof isFeatured !== 'boolean') {
+    errors.push('isFeatured must be a boolean');
   }
 
   if (errors.length > 0) {

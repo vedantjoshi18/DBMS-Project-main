@@ -17,17 +17,15 @@ const eventSchema = new mongoose.Schema(
       type: String,
       required: [true, 'Please provide event category'],
       enum: [
-        'Conference',
+        'Technical',
+        'Cultural',
+        'Sports',
+        'Academic',
         'Workshop',
         'Seminar',
-        'Meetup',
-        'Concert',
-        'Sports',
-        'Other',
-        'Music',
-        'Technology',
-        'Art',
-        'Business'
+        'Competition',
+        'Social',
+        'Other'
       ]
     },
     date: {
@@ -63,6 +61,16 @@ const eventSchema = new mongoose.Schema(
       ref: 'User',
       required: true
     },
+    organizerGroup: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'OrganizerGroup',
+      required: false
+    },
+    organizerGroupType: {
+      type: String,
+      enum: ['club', 'department'],
+      required: false
+    },
     maxAttendees: {
       type: Number,
       required: [true, 'Please specify maximum attendees'],
@@ -81,6 +89,14 @@ const eventSchema = new mongoose.Schema(
       type: String,
       default: 'default-event.jpg'
     },
+    isFeatured: {
+      type: Boolean,
+      default: false
+    },
+    isHot: {
+      type: Boolean,
+      default: false
+    },
     status: {
       type: String,
       enum: ['upcoming', 'ongoing', 'completed', 'cancelled'],
@@ -94,5 +110,8 @@ const eventSchema = new mongoose.Schema(
 
 // Index for faster queries
 eventSchema.index({ date: 1, status: 1 });
+eventSchema.index({ organizerGroup: 1, date: -1 });
+eventSchema.index({ isHot: 1, date: -1 });
+eventSchema.index({ isFeatured: 1, date: -1 });
 
 module.exports = mongoose.model('Event', eventSchema);

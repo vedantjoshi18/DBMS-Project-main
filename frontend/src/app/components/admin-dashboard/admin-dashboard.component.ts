@@ -5,6 +5,7 @@ import { AuthService } from '../../services/auth.service';
 import { AdminService } from '../../services/admin.service';
 import { EventService } from '../../services/event.service';
 import { Event } from '../../models/event.model';
+import { OrganizerGroup } from '../../models/organizer-group.model';
 import { RouterModule, Router } from '@angular/router';
 import { MatIconModule } from '@angular/material/icon';
 
@@ -29,6 +30,10 @@ import { MatIconModule } from '@angular/material/icon';
           <a (click)="currentView = 'events'" [class.active]="currentView === 'events'" class="nav-item">
             <mat-icon>event</mat-icon>
             <span>Events</span>
+          </a>
+          <a (click)="currentView = 'groups'" [class.active]="currentView === 'groups'" class="nav-item">
+            <mat-icon>apartment</mat-icon>
+            <span>Organizer Groups</span>
           </a>
           <a (click)="currentView = 'users'" [class.active]="currentView === 'users'" class="nav-item">
             <mat-icon>group</mat-icon>
@@ -65,6 +70,9 @@ import { MatIconModule } from '@angular/material/icon';
             <button class="btn-icon"><mat-icon>notifications</mat-icon></button>
             <button class="btn-primary" *ngIf="currentView === 'events'" (click)="openEventModal()">
               <mat-icon>add</mat-icon> New Event
+            </button>
+            <button class="btn-primary" *ngIf="currentView === 'groups'" (click)="openGroupModal()">
+              <mat-icon>add</mat-icon> New Group
             </button>
           </div>
         </header>
@@ -114,6 +122,28 @@ import { MatIconModule } from '@angular/material/icon';
                 <h3>Total Revenue</h3>
                 <p class="value">{{ stats?.totalRevenue | currency }}</p>
                 <span class="trend neutral">Steady growth</span>
+              </div>
+            </div>
+
+            <div class="stat-card">
+              <div class="icon-box red-glow">
+                <mat-icon>groups</mat-icon>
+              </div>
+              <div class="stat-details">
+                <h3>Total Clubs</h3>
+                <p class="value">{{ stats?.totalClubs || 0 }}</p>
+                <span class="trend positive">Student-driven communities</span>
+              </div>
+            </div>
+
+            <div class="stat-card">
+              <div class="icon-box blue-glow">
+                <mat-icon>school</mat-icon>
+              </div>
+              <div class="stat-details">
+                <h3>Total Departments</h3>
+                <p class="value">{{ stats?.totalDepartments || 0 }}</p>
+                <span class="trend neutral">Academic organizers</span>
               </div>
             </div>
 
@@ -180,6 +210,43 @@ import { MatIconModule } from '@angular/material/icon';
                       <div class="action-buttons">
                         <button class="btn-icon sm" (click)="openEventModal(event)"><mat-icon>edit</mat-icon></button>
                         <button class="btn-icon sm delete" (click)="deleteEvent(event._id)"><mat-icon>delete</mat-icon></button>
+                      </div>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <div *ngIf="currentView === 'groups'" class="table-view">
+            <div class="grid-2" style="margin-bottom: 16px;">
+              <button class="btn-ghost" [style.borderColor]="groupTypeTab === 'club' ? 'var(--primary)' : 'var(--glass-border)'" (click)="groupTypeTab = 'club'">Clubs</button>
+              <button class="btn-ghost" [style.borderColor]="groupTypeTab === 'department' ? 'var(--primary)' : 'var(--glass-border)'" (click)="groupTypeTab = 'department'">Departments</button>
+            </div>
+
+            <div class="glass-table-container">
+              <table class="glass-table">
+                <thead>
+                  <tr>
+                    <th>Name</th>
+                    <th>Type</th>
+                    <th>Slug</th>
+                    <th>Tags</th>
+                    <th>Active</th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr *ngFor="let group of filteredGroups">
+                    <td>{{ group.name }}</td>
+                    <td>{{ group.type }}</td>
+                    <td>{{ group.slug }}</td>
+                    <td>{{ (group.tags || []).join(', ') }}</td>
+                    <td>{{ group.isActive ? 'Yes' : 'No' }}</td>
+                    <td>
+                      <div class="action-buttons">
+                        <button class="btn-icon sm" (click)="openGroupModal(group)"><mat-icon>edit</mat-icon></button>
+                        <button class="btn-icon sm delete" (click)="deleteGroup(group._id || '')"><mat-icon>delete</mat-icon></button>
                       </div>
                     </td>
                   </tr>
@@ -255,12 +322,34 @@ import { MatIconModule } from '@angular/material/icon';
               <div class="form-section">
                 <label>Category</label>
                 <select formControlName="category">
-                  <option value="Music">Music</option>
-                  <option value="Technology">Technology</option>
-                  <option value="Art">Art</option>
-                  <option value="Business">Business</option>
+                  <option value="Technical">Technical</option>
+                  <option value="Cultural">Cultural</option>
                   <option value="Sports">Sports</option>
+                  <option value="Academic">Academic</option>
+                  <option value="Workshop">Workshop</option>
+                  <option value="Seminar">Seminar</option>
+                  <option value="Competition">Competition</option>
+                  <option value="Social">Social</option>
+                  <option value="Other">Other</option>
                 </select>
+              </div>
+            </div>
+
+            <div class="grid-2">
+              <div class="form-section">
+                <label>Organizer Group</label>
+                <select formControlName="organizerGroup">
+                  <option value="">Select organizer group</option>
+                  <option *ngFor="let group of groups" [value]="group._id">{{ group.name }} ({{ group.type }})</option>
+                </select>
+              </div>
+              <div class="form-section" style="display:flex; align-items:flex-end; gap:18px;">
+                <label style="display:flex; align-items:center; gap:8px; margin:0;">
+                  <input type="checkbox" formControlName="isHot" style="width:auto;"> Is Hot
+                </label>
+                <label style="display:flex; align-items:center; gap:8px; margin:0;">
+                  <input type="checkbox" formControlName="isFeatured" style="width:auto;"> Is Featured
+                </label>
               </div>
             </div>
 
@@ -295,6 +384,68 @@ import { MatIconModule } from '@angular/material/icon';
               <button type="submit" class="btn-primary" [disabled]="eventForm.invalid">
                 {{ isEditing ? 'Update Event' : 'Publish Event' }}
               </button>
+            </div>
+          </form>
+        </div>
+      </div>
+
+      <div class="modal-overlay" *ngIf="showGroupModal">
+        <div class="glass-modal animate-scale-in">
+          <div class="modal-header">
+            <h2>{{ isGroupEditing ? 'Edit Organizer Group' : 'Create Organizer Group' }}</h2>
+            <button class="btn-close" (click)="closeGroupModal()"><mat-icon>close</mat-icon></button>
+          </div>
+
+          <form [formGroup]="groupForm" (ngSubmit)="saveGroup()" class="custom-form">
+            <div class="grid-2">
+              <div class="form-section">
+                <label>Name</label>
+                <input formControlName="name" type="text">
+              </div>
+              <div class="form-section">
+                <label>Type</label>
+                <select formControlName="type">
+                  <option value="club">Club</option>
+                  <option value="department">Department</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="grid-2">
+              <div class="form-section">
+                <label>Slug</label>
+                <input formControlName="slug" type="text">
+              </div>
+              <div class="form-section">
+                <label>Tags (comma separated)</label>
+                <input formControlName="tags" type="text">
+              </div>
+            </div>
+
+            <div class="form-section">
+              <label>Description</label>
+              <textarea rows="3" formControlName="description"></textarea>
+            </div>
+
+            <div class="grid-2">
+              <div class="form-section">
+                <label>Image URL</label>
+                <input formControlName="image" type="text">
+              </div>
+              <div class="form-section">
+                <label>Cover Image URL</label>
+                <input formControlName="coverImage" type="text">
+              </div>
+            </div>
+
+            <label style="display:flex; align-items:center; gap:10px; margin:0;">
+              <input type="checkbox" formControlName="isActive" style="width:auto;">
+              Is Active
+            </label>
+
+            <div class="modal-footer">
+              <button type="button" class="btn-ghost" (click)="closeGroupModal()">Cancel</button>
+              <button type="submit" class="btn-primary" [disabled]="groupForm.invalid">{{ isGroupEditing ? 'Update Group' : 'Create Group' }}</button>
             </div>
           </form>
         </div>
@@ -690,15 +841,23 @@ export class AdminDashboardComponent implements OnInit {
     totalEvents: 0,
     totalUsers: 0,
     totalBookings: 0,
-    totalRevenue: 0
+    totalRevenue: 0,
+    totalClubs: 0,
+    totalDepartments: 0
   };
   events: Event[] = [];
   users: any[] = [];
+  groups: OrganizerGroup[] = [];
+  groupTypeTab: 'club' | 'department' = 'club';
 
   showEventModal = false;
   isEditing = false;
   editingId: string | null = null;
   eventForm: FormGroup;
+  showGroupModal = false;
+  isGroupEditing = false;
+  editingGroupId: string | null = null;
+  groupForm: FormGroup;
 
   adminService = inject(AdminService);
   eventService = inject(EventService);
@@ -711,12 +870,33 @@ export class AdminDashboardComponent implements OnInit {
     this.eventForm = this.fb.group({
       title: ['', Validators.required],
       date: ['', Validators.required],
-      category: ['Music', Validators.required],
+      category: ['Technical', Validators.required],
       description: ['', Validators.required],
+      organizerGroup: ['', Validators.required],
+      isHot: [false],
+      isFeatured: [false],
       ticketPrice: [0, [Validators.required, Validators.min(0)]],
       maxAttendees: [100, [Validators.required, Validators.min(1)]],
       location: ['', Validators.required],
       image: ['']
+    });
+
+    this.groupForm = this.fb.group({
+      name: ['', Validators.required],
+      type: ['club', Validators.required],
+      slug: ['', Validators.required],
+      description: [''],
+      image: [''],
+      coverImage: [''],
+      tags: [''],
+      isActive: [true]
+    });
+
+    this.groupForm.get('name')?.valueChanges.subscribe((value) => {
+      if (!this.isGroupEditing) {
+        const generated = String(value || '').toLowerCase().replaceAll(/[^a-z0-9]+/g, '-').replaceAll(/(^-|-$)/g, '');
+        this.groupForm.patchValue({ slug: generated }, { emitEvent: false });
+      }
     });
   }
 
@@ -724,15 +904,21 @@ export class AdminDashboardComponent implements OnInit {
     this.loadStats();
     this.loadEvents();
     this.loadUsers();
+    this.loadGroups();
   }
 
   getTitle(): string {
     switch (this.currentView) {
       case 'dashboard': return 'Dashboard Overview';
       case 'events': return 'Manage Events';
+      case 'groups': return 'Organizer Groups';
       case 'users': return 'User Management';
       default: return 'Admin Panel';
     }
+  }
+
+  get filteredGroups(): OrganizerGroup[] {
+    return this.groups.filter((group) => group.type === this.groupTypeTab);
   }
 
   getFillPercentage(event: Event): number {
@@ -774,6 +960,18 @@ export class AdminDashboardComponent implements OnInit {
         this.cdr.detectChanges();
       },
       error: (err) => console.error('Error loading users:', err)
+    });
+  }
+
+  loadGroups() {
+    this.adminService.getGroupStats().subscribe({
+      next: (response) => {
+        this.groups = response.data?.groups || [];
+        this.cdr.detectChanges();
+      },
+      error: (error) => {
+        console.error('Error loading groups:', error);
+      }
     });
   }
 
@@ -820,6 +1018,9 @@ export class AdminDashboardComponent implements OnInit {
         description: event.description,
         ticketPrice: event.ticketPrice || event.price,
         maxAttendees: event.maxAttendees,
+        organizerGroup: typeof event.organizerGroup === 'string' ? event.organizerGroup : event.organizerGroup?._id || '',
+        isHot: event.isHot || false,
+        isFeatured: event.isFeatured || false,
         location: loc,
         image: event.image
       });
@@ -829,13 +1030,99 @@ export class AdminDashboardComponent implements OnInit {
       this.eventForm.reset({
         ticketPrice: 0,
         maxAttendees: 100,
-        category: 'Music'
+        category: 'Technical',
+        organizerGroup: '',
+        isHot: false,
+        isFeatured: false
       });
     }
   }
 
   closeEventModal() {
     this.showEventModal = false;
+  }
+
+  openGroupModal(group?: OrganizerGroup) {
+    this.showGroupModal = true;
+
+    if (group) {
+      this.isGroupEditing = true;
+      this.editingGroupId = group._id || null;
+      this.groupForm.patchValue({
+        name: group.name,
+        type: group.type,
+        slug: group.slug,
+        description: group.description || '',
+        image: group.image || '',
+        coverImage: group.coverImage || '',
+        tags: (group.tags || []).join(', '),
+        isActive: group.isActive
+      });
+    } else {
+      this.isGroupEditing = false;
+      this.editingGroupId = null;
+      this.groupForm.reset({
+        name: '',
+        type: 'club',
+        slug: '',
+        description: '',
+        image: '',
+        coverImage: '',
+        tags: '',
+        isActive: true
+      });
+    }
+  }
+
+  closeGroupModal() {
+    this.showGroupModal = false;
+  }
+
+  saveGroup() {
+    if (this.groupForm.invalid) {
+      return;
+    }
+
+    const payload = {
+      ...this.groupForm.value,
+      tags: String(this.groupForm.value.tags || '')
+        .split(',')
+        .map((tag) => tag.trim())
+        .filter(Boolean)
+    };
+
+    const request$ = this.isGroupEditing && this.editingGroupId
+      ? this.adminService.updateGroup(this.editingGroupId, payload)
+      : this.adminService.createGroup(payload);
+
+    request$.subscribe({
+      next: () => {
+        this.closeGroupModal();
+        this.loadGroups();
+        this.loadStats();
+      },
+      error: (error) => {
+        console.error('Error saving group:', error);
+        alert(error.error?.message || 'Failed to save group');
+      }
+    });
+  }
+
+  deleteGroup(id: string) {
+    if (!id || !confirm('Delete this organizer group?')) {
+      return;
+    }
+
+    this.adminService.deleteGroup(id).subscribe({
+      next: () => {
+        this.loadGroups();
+        this.loadStats();
+      },
+      error: (error) => {
+        console.error('Error deleting group:', error);
+        alert(error.error?.message || 'Failed to delete group');
+      }
+    });
   }
 
   saveEvent() {

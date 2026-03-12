@@ -1,31 +1,60 @@
 import { Routes } from '@angular/router';
-import { EventListComponent } from './components/event-list/event-list.component';
-import { EventDetailComponent } from './components/event-detail/event-detail.component';
-import { BookingFormComponent } from './components/booking-form/booking-form.component';
-import { ProfileComponent } from './components/profile/profile.component';
-import { LoginComponent } from './components/login/login.component';
 import { authGuard } from './guards/auth.guard';
 import { adminGuard } from './guards/admin.guard';
-import { AdminDashboardComponent } from './components/admin-dashboard/admin-dashboard.component';
 
 export const routes: Routes = [
-  { path: '', redirectTo: '/events', pathMatch: 'full' },
-  { path: 'events', component: EventListComponent },
-  { path: 'event/:id', component: EventDetailComponent },
-  { path: 'login', component: LoginComponent },
+  {
+    path: '',
+    loadComponent: () => import('./components/home/home.component').then((m) => m.HomeComponent)
+  },
+  {
+    path: 'explore',
+    loadComponent: () => import('./components/explore/explore.component').then((m) => m.ExploreComponent)
+  },
+  {
+    path: 'clubs',
+    loadComponent: () => import('./components/organizer-list/organizer-list.component').then((m) => m.OrganizerListComponent),
+    data: { type: 'club' }
+  },
+  {
+    path: 'clubs/:slug',
+    loadComponent: () => import('./components/organizer-detail/organizer-detail.component').then((m) => m.OrganizerDetailComponent)
+  },
+  {
+    path: 'departments',
+    loadComponent: () => import('./components/organizer-list/organizer-list.component').then((m) => m.OrganizerListComponent),
+    data: { type: 'department' }
+  },
+  {
+    path: 'departments/:slug',
+    loadComponent: () => import('./components/organizer-detail/organizer-detail.component').then((m) => m.OrganizerDetailComponent)
+  },
+  {
+    path: 'events',
+    loadComponent: () => import('./components/event-list/event-list.component').then((m) => m.EventListComponent)
+  },
+  {
+    path: 'event/:id',
+    loadComponent: () => import('./components/event-detail/event-detail.component').then((m) => m.EventDetailComponent)
+  },
+  {
+    path: 'login',
+    loadComponent: () => import('./components/login/login.component').then((m) => m.LoginComponent)
+  },
   {
     path: 'book/:id',
-    component: BookingFormComponent,
+    loadComponent: () => import('./components/booking-form/booking-form.component').then((m) => m.BookingFormComponent),
     canActivate: [authGuard]
   },
   {
     path: 'profile',
-    component: ProfileComponent,
+    loadComponent: () => import('./components/profile/profile.component').then((m) => m.ProfileComponent),
     canActivate: [authGuard]
   },
   {
     path: 'admin',
-    component: AdminDashboardComponent,
+    loadComponent: () => import('./components/admin-dashboard/admin-dashboard.component').then((m) => m.AdminDashboardComponent),
     canActivate: [adminGuard]
-  }
+  },
+  { path: '**', redirectTo: '' }
 ];

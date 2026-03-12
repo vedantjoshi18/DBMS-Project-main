@@ -3,6 +3,7 @@ import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable, map } from 'rxjs';
 import { Event } from '../models/event.model';
 import { environment } from '../../environments/environment';
+import { OrganizerGroupService } from './organizer-group.service';
 
 interface EventsResponse {
   success: boolean;
@@ -19,46 +20,38 @@ interface EventResponse {
   data: Event;
 }
 
+interface EventQueryParams {
+  category?: string;
+  status?: string;
+  search?: string;
+  page?: number;
+  limit?: number;
+  organizerGroup?: string;
+  organizerGroupType?: 'club' | 'department';
+  isHot?: boolean;
+  isFeatured?: boolean;
+  recent?: boolean;
+}
+
 @Injectable({
   providedIn: 'root'
 })
 export class EventService {
-  private http = inject(HttpClient);
-  private apiUrl = `${environment.apiUrl}/events`;
-  private contactUrl = `${environment.apiUrl}/contact`;
+  private readonly http = inject(HttpClient);
+  private readonly organizerGroupService = inject(OrganizerGroupService);
+  private readonly apiUrl = `${environment.apiUrl}/events`;
+  private readonly contactUrl = `${environment.apiUrl}/contact`;
 
-  getEvents(params?: {
-    category?: string;
-    status?: string;
-    search?: string;
-    page?: number;
-    limit?: number;
-  }): Observable<Event[]> {
-    let httpParams = new HttpParams();
+  private readonly mapEvent = (event: Event): Event => ({
+    ...event,
+    id: event.id || Number.parseInt(event._id?.slice(-6) || '0', 16),
+    price: event.ticketPrice || event.price || 0,
+    date: typeof event.date === 'string' ? event.date : event.date.toISOString(),
+    status: this.mapStatus(event.status)
+  } as Event);
 
-    if (params) {
-      if (params.category) httpParams = httpParams.set('category', params.category);
-      if (params.status) httpParams = httpParams.set('status', params.status);
-      if (params.search) httpParams = httpParams.set('search', params.search);
-      if (params.page) httpParams = httpParams.set('page', params.page.toString());
-      if (params.limit) httpParams = httpParams.set('limit', params.limit.toString());
-    }
-
-    return this.http.get<EventsResponse>(this.apiUrl, { params: httpParams }).pipe(
-      map(response => {
-        if (response.success) {
-          // Map backend event structure to frontend format
-          return response.data.map(event => ({
-            ...event,
-            id: event.id || parseInt(event._id?.slice(-6) || '0', 16), // Generate numeric ID for compatibility
-            price: event.ticketPrice || event.price || 0,
-            date: typeof event.date === 'string' ? event.date : event.date.toISOString(),
-            status: this.mapStatus(event.status)
-          } as Event));
-        }
-        return [];
-      })
-    );
+  getEvents(params?: EventQueryParams): Observable<Event[]> {
+    return this.queryEvents(params);
   }
 
   getEventById(id: string | number): Observable<Event> {
@@ -68,14 +61,7 @@ export class EventService {
     return this.http.get<EventResponse>(`${this.apiUrl}/${eventId}`).pipe(
       map(response => {
         if (response.success && response.data) {
-          const event = response.data;
-          return {
-            ...event,
-            id: event.id || parseInt(event._id?.slice(-6) || '0', 16),
-            price: event.ticketPrice || event.price || 0,
-            date: typeof event.date === 'string' ? event.date : event.date.toISOString(),
-            status: this.mapStatus(event.status)
-          } as Event;
+          return this.mapEvent(response.data);
         }
         throw new Error('Event not found');
       })
@@ -86,14 +72,7 @@ export class EventService {
     return this.http.post<EventResponse>(this.apiUrl, eventData).pipe(
       map(response => {
         if (response.success && response.data) {
-          const event = response.data;
-          return {
-            ...event,
-            id: event.id || parseInt(event._id?.slice(-6) || '0', 16),
-            price: event.ticketPrice || event.price || 0,
-            date: typeof event.date === 'string' ? event.date : event.date.toISOString(),
-            status: this.mapStatus(event.status)
-          } as Event;
+          return this.mapEvent(response.data);
         }
         throw new Error('Failed to create event');
       })
@@ -104,14 +83,7 @@ export class EventService {
     return this.http.put<EventResponse>(`${this.apiUrl}/${id}`, eventData).pipe(
       map(response => {
         if (response.success && response.data) {
-          const event = response.data;
-          return {
-            ...event,
-            id: event.id || parseInt(event._id?.slice(-6) || '0', 16),
-            price: event.ticketPrice || event.price || 0,
-            date: typeof event.date === 'string' ? event.date : event.date.toISOString(),
-            status: this.mapStatus(event.status)
-          } as Event;
+          return this.mapEvent(response.data);
         }
         throw new Error('Failed to update event');
       })
@@ -132,6 +104,22 @@ export class EventService {
     return this.http.post(this.contactUrl, data);
   }
 
+  getHotEvents(): Observable<Event[]> {
+    return this.queryEvents({ isHot: true, limit: 6 });
+  }
+
+  getFeaturedEvents(): Observable<Event[]> {
+    return this.queryEvents({ isFeatured: true, limit: 8 });
+  }
+
+  getRecentEvents(): Observable<Event[]> {
+    return this.queryEvents({ recent: true, limit: 8 });
+  }
+
+  getEventsByGroup(groupSlug: string): Observable<Event[]> {
+    return this.organizerGroupService.getEventsByGroup(groupSlug);
+  }
+
   // Helper method to map backend status to frontend status
   private mapStatus(status: string): 'upcoming' | 'ongoing' | 'completed' | 'cancelled' | 'open' | 'sold-out' {
     const statusMap: { [key: string]: 'upcoming' | 'ongoing' | 'completed' | 'cancelled' | 'open' | 'sold-out' } = {
@@ -150,5 +138,65 @@ export class EventService {
     // This is a simple conversion - in production, you'd want a proper mapping
     // For now, we'll try to find by numeric ID or use a fallback
     return numId.toString();
+  }
+
+  private queryEvents(params?: EventQueryParams): Observable<Event[]> {
+    const httpParams = this.buildHttpParams(params);
+
+    return this.http.get<EventsResponse>(this.apiUrl, { params: httpParams }).pipe(
+      map((response) => {
+        if (response.success) {
+          return response.data.map(this.mapEvent);
+        }
+        return [];
+      })
+    );
+  }
+
+  private buildHttpParams(params?: EventQueryParams): HttpParams {
+    if (!params) {
+      return new HttpParams();
+    }
+
+    const valuePairs: Array<[string, string | undefined]> = [
+      ['category', params.category],
+      ['status', params.status],
+      ['search', params.search],
+      ['organizerGroup', params.organizerGroup],
+      ['organizerGroupType', params.organizerGroupType]
+    ];
+
+    const numberPairs: Array<[string, number | undefined]> = [
+      ['page', params.page],
+      ['limit', params.limit]
+    ];
+
+    const booleanPairs: Array<[string, boolean | undefined]> = [
+      ['isHot', params.isHot],
+      ['isFeatured', params.isFeatured],
+      ['recent', params.recent]
+    ];
+
+    let httpParams = new HttpParams();
+
+    for (const [key, value] of valuePairs) {
+      if (value) {
+        httpParams = httpParams.set(key, value);
+      }
+    }
+
+    for (const [key, value] of numberPairs) {
+      if (typeof value === 'number') {
+        httpParams = httpParams.set(key, value.toString());
+      }
+    }
+
+    for (const [key, value] of booleanPairs) {
+      if (typeof value === 'boolean') {
+        httpParams = httpParams.set(key, String(value));
+      }
+    }
+
+    return httpParams;
   }
 }

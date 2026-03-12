@@ -22,11 +22,11 @@ import { AuthService } from '../../services/auth.service';
         
         <div class="nav-inner-pill">
           <ul class="nav-links">
-            <li><a (click)="scrollToSection('about')" class="nav-link">About</a></li>
-            <li><a routerLink="/events" routerLinkActive="active" class="nav-link">Events</a></li>
-            <li><a (click)="scrollToSection('categories')" class="nav-link">Categories</a></li>
+            <li><a routerLink="/" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }" class="nav-link">Home</a></li>
+            <li><a routerLink="/clubs" routerLinkActive="active" class="nav-link">Clubs</a></li>
+            <li><a routerLink="/departments" routerLinkActive="active" class="nav-link">Departments</a></li>
+            <li><a routerLink="/events" routerLinkActive="active" class="nav-link">All Events</a></li>
             <li><a (click)="handleProfileClick()" [class.active]="router.url === '/profile'" class="nav-link">Profile</a></li>
-            <li><a (click)="scrollToSection('contact')" class="nav-link">Contact</a></li>
           </ul>
         </div>
         
@@ -59,11 +59,11 @@ import { AuthService } from '../../services/auth.service';
         </div>
 
         <ul class="mobile-nav-links">
-          <li><a (click)="scrollToSection('about'); toggleMobileMenu()" class="mobile-link">About</a></li>
-          <li><a routerLink="/events" class="mobile-link">Events</a></li>
-          <li><a (click)="scrollToSection('categories'); toggleMobileMenu()" class="mobile-link">Categories</a></li>
+          <li><a routerLink="/" class="mobile-link">Home</a></li>
+          <li><a routerLink="/clubs" class="mobile-link">Clubs</a></li>
+          <li><a routerLink="/departments" class="mobile-link">Departments</a></li>
+          <li><a routerLink="/events" class="mobile-link">All Events</a></li>
           <li><a (click)="handleProfileClick(); toggleMobileMenu()" class="mobile-link">Profile</a></li>
-          <li><a (click)="scrollToSection('contact'); toggleMobileMenu()" class="mobile-link">Contact</a></li>
         </ul>
 
         <div class="mobile-actions">
@@ -1064,20 +1064,20 @@ export class NavbarComponent implements OnInit {
 
   logout() {
     this.authService.logout();
-    this.router.navigate(['/events']);
+    this.router.navigate(['/']);
   }
 
   scrollToSection(sectionId: string) {
-    // First navigate to events page if not already there
-    if (this.router.url !== '/events' && this.router.url !== '/') {
-      this.router.navigate(['/events']).then(() => {
-        setTimeout(() => {
-          document.getElementById(sectionId)?.scrollIntoView({ behavior: 'smooth' });
-        }, 100);
-      });
-    } else {
+    if (this.router.url === '/') {
       document.getElementById(sectionId)?.scrollIntoView({ behavior: 'smooth' });
+      return;
     }
+
+    this.router.navigate(['/']).then(() => {
+      setTimeout(() => {
+        document.getElementById(sectionId)?.scrollIntoView({ behavior: 'smooth' });
+      }, 100);
+    });
   }
 
   handleProfileClick() {

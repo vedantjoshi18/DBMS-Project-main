@@ -1,11 +1,19 @@
 require('dotenv').config();
-const mongoose = require('mongoose');
 const connectDB = require('../src/config/database');
 const User = require('../src/models/User');
 const Event = require('../src/models/Event');
 const Booking = require('../src/models/Booking');
+const OrganizerGroup = require('../src/models/OrganizerGroup');
 
-// Sample data
+const categoryMap = {
+  Conference: 'Academic',
+  Workshop: 'Workshop',
+  Seminar: 'Seminar',
+  Meetup: 'Social',
+  Concert: 'Cultural',
+  Sports: 'Sports'
+};
+
 const sampleUsers = [
   {
     name: 'John Doe',
@@ -41,167 +49,257 @@ const sampleUsers = [
   }
 ];
 
+const clubs = [
+  { name: 'Photography Club', slug: 'photography-club', type: 'club', description: 'Capturing moments...', tags: ['cultural', 'creative'] },
+  { name: 'Robotics Club', slug: 'robotics-club', type: 'club', description: 'Building the future...', tags: ['technical'] },
+  { name: 'Literary Club', slug: 'literary-club', type: 'club', description: 'Words that inspire...', tags: ['cultural', 'academic'] },
+  { name: 'Coding Club', slug: 'coding-club', type: 'club', description: 'Code, build, repeat...', tags: ['technical'] },
+  { name: 'Drama Club', slug: 'drama-club', type: 'club', description: 'The stage is yours...', tags: ['cultural'] },
+  { name: 'Music Club', slug: 'music-club', type: 'club', description: 'Feel the rhythm...', tags: ['cultural'] },
+  { name: 'Entrepreneurship Cell', slug: 'e-cell', type: 'club', description: 'Build your startup...', tags: ['business', 'technical'] },
+  { name: 'Environmental Club', slug: 'green-club', type: 'club', description: 'For a sustainable campus...', tags: ['social'] }
+];
+
+const departments = [
+  { name: 'Computer Science', slug: 'cs-dept', type: 'department', description: 'The future is code...', tags: ['technical'] },
+  { name: 'Electronics & Communication', slug: 'ece-dept', type: 'department', description: 'Signals and systems...', tags: ['technical'] },
+  { name: 'Mechanical Engineering', slug: 'mech-dept', type: 'department', description: 'Design in motion...', tags: ['technical'] },
+  { name: 'Business Administration', slug: 'bba-dept', type: 'department', description: 'Leaders of tomorrow...', tags: ['business'] },
+  { name: 'Physics', slug: 'physics-dept', type: 'department', description: 'Understanding the universe...', tags: ['academic'] },
+  { name: 'English & Literature', slug: 'english-dept', type: 'department', description: 'The power of words...', tags: ['academic', 'cultural'] }
+];
+
 const sampleEvents = [
   {
-    title: 'Tech Conference 2026',
-    description: 'Join us for an exciting tech conference featuring the latest innovations in software development, AI, and cloud computing. Network with industry leaders and learn from expert speakers.',
-    category: 'Conference',
-    date: new Date('2026-03-15T10:00:00'),
-    time: '10:00 AM - 6:00 PM',
-    location: {
-      venue: 'Convention Center',
-      address: '123 Tech Street',
-      city: 'Bangalore'
-    },
-    maxAttendees: 500,
-    currentAttendees: 0,
-    ticketPrice: 1500,
-    image: 'https://images.unsplash.com/photo-1540575467063-178a50c2df87?w=800',
-    status: 'upcoming'
+    title: 'HackSprint 2026',
+    category: 'Technical',
+    groupSlug: 'coding-club',
+    date: '2026-04-10T10:00:00',
+    time: '10:00 AM',
+    ticketPrice: 100,
+    isHot: true,
+    isFeatured: true,
+    venue: 'Innovation Lab',
+    image: 'https://images.unsplash.com/photo-1518773553398-650c184e0bb3?w=1400',
+    description: 'A 24-hour code sprint where teams prototype impactful campus solutions in AI, productivity, and student life.'
   },
   {
-    title: 'Angular Workshop',
-    description: 'Hands-on workshop on Angular framework. Learn about components, services, routing, and state management. Perfect for developers looking to enhance their frontend skills.',
-    category: 'Workshop',
-    date: new Date('2026-03-20T14:00:00'),
-    time: '2:00 PM - 5:00 PM',
-    location: {
-      venue: 'Tech Hub',
-      address: '456 Innovation Road',
-      city: 'Bangalore'
-    },
-    maxAttendees: 50,
-    currentAttendees: 0,
-    ticketPrice: 500,
-    image: 'https://images.unsplash.com/photo-1516321318423-f06f85e504b3?w=800',
-    status: 'upcoming'
+    title: 'Campus PhotoWalk',
+    category: 'Cultural',
+    groupSlug: 'photography-club',
+    date: '2026-04-12T16:00:00',
+    time: '4:00 PM',
+    ticketPrice: 0,
+    isHot: true,
+    isFeatured: false,
+    venue: 'Main Quad',
+    image: 'https://images.unsplash.com/photo-1452587925148-ce544e77e70d?w=1400',
+    description: 'Golden-hour guided photowalk across iconic campus spots with mini challenges on composition and storytelling.'
   },
   {
-    title: 'Music Festival',
-    description: 'Experience an amazing music festival with performances from top artists. Food, drinks, and great music await you!',
-    category: 'Concert',
-    date: new Date('2026-04-10T18:00:00'),
-    time: '6:00 PM - 11:00 PM',
-    location: {
-      venue: 'Open Air Arena',
-      address: '789 Music Lane',
-      city: 'Bangalore'
-    },
-    maxAttendees: 2000,
-    currentAttendees: 0,
-    ticketPrice: 2000,
-    image: 'https://images.unsplash.com/photo-1470229722913-7c0e2dbbafd3?w=800',
-    status: 'upcoming'
+    title: 'RoboWars',
+    category: 'Competition',
+    groupSlug: 'robotics-club',
+    date: '2026-04-18T09:00:00',
+    time: '9:00 AM',
+    ticketPrice: 150,
+    isHot: true,
+    isFeatured: true,
+    venue: 'Tech Arena',
+    image: 'https://images.unsplash.com/photo-1581092580497-e0d23cbdf1dc?w=1400',
+    description: 'Design, battle, and outsmart in high-energy robot rounds judged on agility, control, and innovation.'
   },
   {
-    title: 'Business Networking Meetup',
-    description: 'Connect with entrepreneurs, investors, and business professionals. Share ideas and build valuable connections.',
-    category: 'Meetup',
-    date: new Date('2026-03-25T19:00:00'),
-    time: '7:00 PM - 9:00 PM',
-    location: {
-      venue: 'Business Center',
-      address: '321 Corporate Avenue',
-      city: 'Bangalore'
-    },
-    maxAttendees: 100,
-    currentAttendees: 0,
+    title: 'Open Mic Evening',
+    category: 'Cultural',
+    groupSlug: 'literary-club',
+    date: '2026-04-22T18:00:00',
+    time: '6:00 PM',
+    ticketPrice: 50,
+    isHot: false,
+    isFeatured: true,
+    venue: 'Auditorium B',
+    image: 'https://images.unsplash.com/photo-1516280440614-37939bbacd81?w=1400',
+    description: 'An evening of spoken word, poetry, and acoustic performances that celebrates student voices and stories.'
+  },
+  {
+    title: 'Street Play Showcase',
+    category: 'Social',
+    groupSlug: 'drama-club',
+    date: '2026-05-02T17:00:00',
+    time: '5:00 PM',
+    ticketPrice: 0,
+    isHot: false,
+    isFeatured: false,
+    venue: 'Open Theater',
+    image: 'https://images.unsplash.com/photo-1503095396549-807759245b35?w=1400',
+    description: 'Powerful stage-in-the-round performances focused on social themes, student expression, and public dialogue.'
+  },
+  {
+    title: 'Battle of Bands',
+    category: 'Cultural',
+    groupSlug: 'music-club',
+    date: '2026-05-05T19:00:00',
+    time: '7:00 PM',
+    ticketPrice: 200,
+    isHot: true,
+    isFeatured: true,
+    venue: 'Central Stage',
+    image: 'https://images.unsplash.com/photo-1501386761578-eac5c94b800a?w=1400',
+    description: 'Campus bands compete live across indie, rock, and fusion sets in a high-voltage night finale.'
+  },
+  {
+    title: 'Startup Pitch Day',
+    category: 'Competition',
+    groupSlug: 'e-cell',
+    date: '2026-05-11T11:00:00',
+    time: '11:00 AM',
+    ticketPrice: 120,
+    isHot: false,
+    isFeatured: true,
+    venue: 'Seminar Hall 2',
+    image: 'https://images.unsplash.com/photo-1552664730-d307ca884978?w=1400',
+    description: 'Early-stage founders pitch to mentors and investors for incubation support, funding feedback, and mentorship.'
+  },
+  {
+    title: 'Green Campus Drive',
+    category: 'Social',
+    groupSlug: 'green-club',
+    date: '2026-05-15T08:00:00',
+    time: '8:00 AM',
+    ticketPrice: 0,
+    isHot: false,
+    isFeatured: false,
+    venue: 'North Gate',
+    image: 'https://images.unsplash.com/photo-1498928715928-f21b8f5f5f1c?w=1400',
+    description: 'Join the sustainability challenge with tree-planting, waste-segmentation games, and eco-volunteering tasks.'
+  },
+  {
+    title: 'AI Colloquium',
+    category: categoryMap.Conference,
+    groupSlug: 'cs-dept',
+    date: '2026-05-20T10:00:00',
+    time: '10:00 AM',
+    ticketPrice: 250,
+    isHot: false,
+    isFeatured: true,
+    venue: 'CS Block',
+    image: 'https://images.unsplash.com/photo-1677442136019-21780ecad995?w=1400',
+    description: 'Faculty and industry experts unpack applied AI, responsible systems, and real-world deployment case studies.'
+  },
+  {
+    title: 'Embedded Systems Workshop',
+    category: categoryMap.Workshop,
+    groupSlug: 'ece-dept',
+    date: '2026-05-27T10:30:00',
+    time: '10:30 AM',
+    ticketPrice: 180,
+    isHot: false,
+    isFeatured: false,
+    venue: 'ECE Lab',
+    image: 'https://images.unsplash.com/photo-1518770660439-4636190af475?w=1400',
+    description: 'Hands-on circuit design and microcontroller prototyping session with guided debugging and hardware demos.'
+  },
+  {
+    title: 'CAD Design Masterclass',
+    category: categoryMap.Seminar,
+    groupSlug: 'mech-dept',
+    date: '2026-06-01T09:30:00',
+    time: '9:30 AM',
+    ticketPrice: 220,
+    isHot: false,
+    isFeatured: false,
+    venue: 'Mechanical Workshop',
+    image: 'https://images.unsplash.com/photo-1581093458791-9f3c3900df4b?w=1400',
+    description: 'From sketch to simulation: advanced CAD modeling workflows for real mechanical design challenges.'
+  },
+  {
+    title: 'Marketing Summit',
+    category: 'Academic',
+    groupSlug: 'bba-dept',
+    date: '2026-06-06T10:00:00',
+    time: '10:00 AM',
     ticketPrice: 300,
-    image: 'https://images.unsplash.com/photo-1521737604893-d14cc237f11d?w=800',
-    status: 'upcoming'
-  },
-  {
-    title: 'Web Development Seminar',
-    description: 'Learn about modern web development practices, best practices, and emerging technologies. Perfect for both beginners and experienced developers.',
-    category: 'Seminar',
-    date: new Date('2026-04-05T09:00:00'),
-    time: '9:00 AM - 1:00 PM',
-    location: {
-      venue: 'Education Center',
-      address: '654 Learning Street',
-      city: 'Bangalore'
-    },
-    maxAttendees: 200,
-    currentAttendees: 0,
-    ticketPrice: 800,
-    image: 'https://images.unsplash.com/photo-1498050108023-c5249f4df085?w=800',
-    status: 'upcoming'
-  },
-  {
-    title: 'Marathon Run',
-    description: 'Join us for a fun and healthy marathon run. Multiple categories available: 5K, 10K, and Half Marathon. All participants get a medal and t-shirt.',
-    category: 'Sports',
-    date: new Date('2026-04-20T06:00:00'),
-    time: '6:00 AM - 10:00 AM',
-    location: {
-      venue: 'City Park',
-      address: '987 Fitness Road',
-      city: 'Bangalore'
-    },
-    maxAttendees: 1000,
-    currentAttendees: 0,
-    ticketPrice: 600,
-    image: 'https://images.unsplash.com/photo-1571008887538-b36bb32f4571?w=800',
-    status: 'upcoming'
+    isHot: true,
+    isFeatured: false,
+    venue: 'Commerce Hall',
+    image: 'https://images.unsplash.com/photo-1552581234-26160f608093?w=1400',
+    description: 'Learn growth strategy, brand storytelling, and digital campaign planning from top practitioners.'
   }
 ];
 
 // Seed function
 const seedDatabase = async () => {
   try {
-    console.log('🌱 Starting database seeding...\n');
+    console.log('Starting college platform seeding...');
 
     // Connect to database
     await connectDB();
 
-    // Clear existing data (optional - set CLEAR_DATA=false in .env to skip)
     const shouldClearData = process.env.CLEAR_DATA !== 'false';
     if (shouldClearData) {
-      console.log('🗑️  Clearing existing data...');
       await Booking.deleteMany({});
       await Event.deleteMany({});
+      await OrganizerGroup.deleteMany({});
       await User.deleteMany({});
-      console.log('✅ Existing data cleared\n');
-    } else {
-      console.log('⚠️  Skipping data clearing (CLEAR_DATA=false)\n');
     }
 
     // Create users
-    console.log('👥 Creating users...');
     const createdUsers = [];
     for (const userData of sampleUsers) {
-      // Check if user already exists
       let user = await User.findOne({ email: userData.email });
       if (!user) {
         user = await User.create(userData);
-        console.log(`   ✓ Created user: ${user.name} (${user.email})`);
-      } else {
-        console.log(`   ⊙ User already exists: ${user.email}`);
       }
       createdUsers.push(user);
     }
-    console.log(`✅ Created ${createdUsers.length} users\n`);
 
-    // Create events
-    console.log('📅 Creating events...');
+    const groupsInput = [...clubs, ...departments];
+    const groupsBySlug = {};
+    for (const groupData of groupsInput) {
+      let group = await OrganizerGroup.findOne({ slug: groupData.slug });
+      if (!group) {
+        group = await OrganizerGroup.create(groupData);
+      }
+      groupsBySlug[group.slug] = group;
+    }
+
     const createdEvents = [];
     for (const eventData of sampleEvents) {
-      // Assign organizer (use first user as organizer)
+      const group = groupsBySlug[eventData.groupSlug];
       const organizer = createdUsers[0];
+
+      if (!group) {
+        continue;
+      }
+
       const event = await Event.create({
-        ...eventData,
-        organizer: organizer._id
+        title: eventData.title,
+        description: eventData.description,
+        category: eventData.category,
+        date: new Date(eventData.date),
+        time: eventData.time,
+        location: {
+          venue: eventData.venue,
+          address: 'Christ University Kengeri Campus',
+          city: 'Bengaluru'
+        },
+        organizer: organizer._id,
+        organizerGroup: group._id,
+        organizerGroupType: group.type,
+        maxAttendees: 250,
+        currentAttendees: 0,
+        ticketPrice: eventData.ticketPrice,
+        image: eventData.image,
+        status: 'upcoming',
+        isHot: eventData.isHot,
+        isFeatured: eventData.isFeatured
       });
-      console.log(`   ✓ Created event: ${event.title}`);
       createdEvents.push(event);
     }
-    console.log(`✅ Created ${createdEvents.length} events\n`);
 
-    // Create bookings
-    console.log('🎫 Creating bookings...');
     const bookings = [];
-    
-    // User 1 books event 1
+
     if (createdUsers[0] && createdEvents[0]) {
       const booking1 = await Booking.create({
         event: createdEvents[0]._id,
@@ -214,10 +312,8 @@ const seedDatabase = async () => {
       createdEvents[0].currentAttendees += 2;
       await createdEvents[0].save();
       bookings.push(booking1);
-      console.log(`   ✓ ${createdUsers[0].name} booked ${createdEvents[0].title} (2 tickets)`);
     }
 
-    // User 2 books event 2
     if (createdUsers[1] && createdEvents[1]) {
       const booking2 = await Booking.create({
         event: createdEvents[1]._id,
@@ -230,10 +326,8 @@ const seedDatabase = async () => {
       createdEvents[1].currentAttendees += 1;
       await createdEvents[1].save();
       bookings.push(booking2);
-      console.log(`   ✓ ${createdUsers[1].name} booked ${createdEvents[1].title} (1 ticket)`);
     }
 
-    // User 3 books event 3
     if (createdUsers[2] && createdEvents[2]) {
       const booking3 = await Booking.create({
         event: createdEvents[2]._id,
@@ -246,29 +340,19 @@ const seedDatabase = async () => {
       createdEvents[2].currentAttendees += 3;
       await createdEvents[2].save();
       bookings.push(booking3);
-      console.log(`   ✓ ${createdUsers[2].name} booked ${createdEvents[2].title} (3 tickets)`);
     }
 
-    console.log(`✅ Created ${bookings.length} bookings\n`);
-
-    // Summary
-    console.log('📊 Seeding Summary:');
-    console.log(`   Users: ${createdUsers.length}`);
-    console.log(`   Events: ${createdEvents.length}`);
-    console.log(`   Bookings: ${bookings.length}`);
-    console.log('\n✅ Database seeding completed successfully!');
-    console.log('\n📝 Test Credentials:');
-    console.log('   User: john@example.com / password123');
-    console.log('   User: jane@example.com / password123');
-    console.log('   Admin: admin@example.com / admin123');
-    console.log('\n');
+    console.log(`Users: ${createdUsers.length}`);
+    console.log(`Organizer Groups: ${Object.keys(groupsBySlug).length}`);
+    console.log(`Events: ${createdEvents.length}`);
+    console.log(`Bookings: ${bookings.length}`);
+    console.log('Seed completed successfully.');
 
     process.exit(0);
   } catch (error) {
-    console.error('❌ Error seeding database:', error);
+    console.error('Seed failed:', error);
     process.exit(1);
   }
 };
 
-// Run seed function
 seedDatabase();

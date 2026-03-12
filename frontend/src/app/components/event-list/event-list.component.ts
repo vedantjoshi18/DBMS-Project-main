@@ -6,6 +6,8 @@ import { CategoryFilterPipe } from '../../pipes/category-filter.pipe';
 import { FormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
+import { OrganizerGroupService } from '../../services/organizer-group.service';
+import { OrganizerGroup } from '../../models/organizer-group.model';
 
 @Component({
   selector: 'app-event-list',
@@ -104,16 +106,29 @@ import { MatIconModule } from '@angular/material/icon';
         <div class="filter-bar">
           <select [(ngModel)]="selectedCategory" class="filter-select">
             <option value="All">All Categories</option>
-            <option value="Technology">Technology</option>
-            <option value="Music">Music</option>
-            <option value="Business">Business</option>
-            <option value="Art">Art</option>
+            <option value="Technical">Technical</option>
+            <option value="Cultural">Cultural</option>
             <option value="Sports">Sports</option>
+            <option value="Academic">Academic</option>
+            <option value="Workshop">Workshop</option>
+            <option value="Seminar">Seminar</option>
+            <option value="Competition">Competition</option>
+            <option value="Social">Social</option>
+            <option value="Other">Other</option>
+          </select>
+          <select [(ngModel)]="selectedOrganizerType" class="filter-select">
+            <option value="All">All Organizer Types</option>
+            <option value="club">Clubs</option>
+            <option value="department">Departments</option>
+          </select>
+          <select [(ngModel)]="selectedOrganizerGroup" class="filter-select">
+            <option value="All">All Organizer Groups</option>
+            <option *ngFor="let group of filteredGroups" [value]="group._id">{{ group.name }}</option>
           </select>
         </div>
         
         <div class="events-grid">
-          <article class="event-card" *ngFor="let event of events$ | async | categoryFilter:selectedCategory; let i = index" 
+          <article class="event-card" *ngFor="let event of filteredEvents | categoryFilter:selectedCategory; let i = index" 
                    [routerLink]="['/event', event._id || event.id]"
                    [style.animation-delay]="(i * 0.1) + 's'">
             <div class="event-image">
@@ -1549,10 +1564,14 @@ export class EventListComponent implements AfterViewInit {
   @ViewChildren('scrollSection') scrollSections!: QueryList<ElementRef>;
 
   eventService = inject(EventService);
+  groupService = inject(OrganizerGroupService);
   events$ = this.eventService.getEvents();
   allEvents: any[] = [];
+  organizerGroups: OrganizerGroup[] = [];
   categoryCounts: { [key: string]: number } = {};
   selectedCategory = 'All';
+  selectedOrganizerType: 'All' | 'club' | 'department' = 'All';
+  selectedOrganizerGroup = 'All';
 
   contactForm = {
     name: '',
@@ -1601,6 +1620,36 @@ export class EventListComponent implements AfterViewInit {
       this.allEvents = events;
       this.calculateCategoryCounts();
     });
+
+    this.groupService.getAllGroups().subscribe((groups) => {
+      this.organizerGroups = groups;
+    });
+  }
+
+  get filteredGroups(): OrganizerGroup[] {
+    if (this.selectedOrganizerType === 'All') {
+      return this.organizerGroups;
+    }
+    return this.organizerGroups.filter((group) => group.type === this.selectedOrganizerType);
+  }
+
+  get filteredEvents(): any[] {
+    let events = this.allEvents;
+
+    if (this.selectedOrganizerType !== 'All') {
+      events = events.filter((event) => event.organizerGroupType === this.selectedOrganizerType);
+    }
+
+    if (this.selectedOrganizerGroup !== 'All') {
+      events = events.filter((event) => {
+        if (typeof event.organizerGroup === 'string') {
+          return event.organizerGroup === this.selectedOrganizerGroup;
+        }
+        return event.organizerGroup?._id === this.selectedOrganizerGroup;
+      });
+    }
+
+    return events;
   }
 
   calculateCategoryCounts() {
@@ -1676,7 +1725,7 @@ export class EventListComponent implements AfterViewInit {
       return date.getDate().toString().padStart(2, '0');
     }
     const days = ['01', '05', '12', '15', '20', '25', '28'];
-    const id = event.id || parseInt(event._id?.slice(-6) || '0', 16);
+    const id = event.id || Number.parseInt(event._id?.slice(-6) || '0', 16);
     return days[id % days.length];
   }
 
@@ -1687,7 +1736,7 @@ export class EventListComponent implements AfterViewInit {
       return months[date.getMonth()];
     }
     const months = ['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC'];
-    const id = event.id || parseInt(event._id?.slice(-6) || '0', 16);
+    const id = event.id || Number.parseInt(event._id?.slice(-6) || '0', 16);
     return months[id % months.length];
   }
 }

@@ -1,4 +1,5 @@
 const Event = require('../models/Event');
+const OrganizerGroup = require('../models/OrganizerGroup');
 const { logAdminAction } = require('../utils/auditLog');
 
 // @desc    Create new event
@@ -8,6 +9,17 @@ exports.createEvent = async (req, res) => {
   try {
     // Add organizer from logged-in user
     req.body.organizer = req.user._id;
+
+    const organizerGroup = await OrganizerGroup.findById(req.body.organizerGroup);
+
+    if (!organizerGroup) {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid organizer group'
+      });
+    }
+
+    req.body.organizerGroupType = organizerGroup.type;
 
     const event = await Event.create(req.body);
 
@@ -61,6 +73,22 @@ exports.getAllEvents = async (req, res) => {
       query.status = req.query.status;
     }
 
+    if (req.query.organizerGroup) {
+      query.organizerGroup = req.query.organizerGroup;
+    }
+
+    if (req.query.organizerGroupType && ['club', 'department'].includes(req.query.organizerGroupType)) {
+      query.organizerGroupType = req.query.organizerGroupType;
+    }
+
+    if (req.query.isHot === 'true') {
+      query.isHot = true;
+    }
+
+    if (req.query.isFeatured === 'true') {
+      query.isFeatured = true;
+    }
+
     // Search by title
     if (req.query.search) {
       query.title = { $regex: req.query.search, $options: 'i' };
@@ -70,11 +98,13 @@ exports.getAllEvents = async (req, res) => {
     const page = Number.parseInt(req.query.page, 10) || 1;
     const limit = Number.parseInt(req.query.limit, 10) || 10;
     const startIndex = (page - 1) * limit;
+    const sort = req.query.recent === 'true' ? { createdAt: -1 } : { date: -1 };
 
     // Execute query with population
     const events = await Event.find(query)
       .populate('organizer', 'name email')
-      .sort('-createdAt')
+      .populate('organizerGroup', 'name slug type image coverImage tags')
+      .sort(sort)
       .skip(startIndex)
       .limit(limit);
 
@@ -104,7 +134,8 @@ exports.getAllEvents = async (req, res) => {
 exports.getEvent = async (req, res) => {
   try {
     const event = await Event.findById(req.params.id)
-      .populate('organizer', 'name email phone');
+      .populate('organizer', 'name email phone')
+      .populate('organizerGroup');
 
     if (!event) {
       return res.status(404).json({
@@ -146,6 +177,19 @@ exports.updateEvent = async (req, res) => {
         success: false,
         message: 'Not authorized to update this event'
       });
+    }
+
+    if (req.body.organizerGroup) {
+      const organizerGroup = await OrganizerGroup.findById(req.body.organizerGroup);
+
+      if (!organizerGroup) {
+        return res.status(400).json({
+          success: false,
+          message: 'Invalid organizer group'
+        });
+      }
+
+      req.body.organizerGroupType = organizerGroup.type;
     }
 
     event = await Event.findByIdAndUpdate(req.params.id, req.body, {

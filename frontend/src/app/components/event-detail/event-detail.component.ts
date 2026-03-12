@@ -86,6 +86,18 @@ import { MatIconModule } from '@angular/material/icon';
               <h3>About This Event</h3>
               <p>{{ event.description }}</p>
             </div>
+
+            <div class="organized-by glass-card" *ngIf="event.organizerGroup && isOrganizerObject(event.organizerGroup)">
+              <h4>Organized by</h4>
+              <div class="organizer-info">
+                <img *ngIf="event.organizerGroup.image" [src]="event.organizerGroup.image" [alt]="event.organizerGroup.name">
+                <div>
+                  <span class="organizer-name">{{ event.organizerGroup.name }}</span>
+                  <span class="organizer-type-badge">{{ event.organizerGroupType | titlecase }}</span>
+                </div>
+                <a [routerLink]="getOrganizerLink(event)" class="btn btn-glass">View All Events →</a>
+              </div>
+            </div>
             
             <div class="event-actions">
               <div class="price-display">
@@ -268,6 +280,43 @@ import { MatIconModule } from '@angular/material/icon';
       color: rgba(255, 255, 255, 0.7);
       line-height: 1.7;
     }
+
+    .organized-by {
+      padding: 20px;
+      margin-bottom: 24px;
+    }
+
+    .organized-by h4 {
+      margin: 0 0 12px;
+      font-size: 1rem;
+    }
+
+    .organizer-info {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      flex-wrap: wrap;
+    }
+
+    .organizer-info img {
+      width: 42px;
+      height: 42px;
+      border-radius: 50%;
+      object-fit: cover;
+      border: 1px solid rgba(255, 255, 255, 0.16);
+    }
+
+    .organizer-name {
+      display: block;
+      font-weight: 600;
+    }
+
+    .organizer-type-badge {
+      display: inline-block;
+      margin-top: 2px;
+      font-size: 0.75rem;
+      color: rgba(255, 255, 255, 0.75);
+    }
     
     /* Actions */
     .event-actions {
@@ -393,5 +442,18 @@ export class EventDetailComponent {
     } else {
       this.authService.openLoginModal();
     }
+  }
+
+  isOrganizerObject(value: unknown): value is { name: string; slug: string; type: 'club' | 'department'; image?: string } {
+    return Boolean(value && typeof value === 'object' && 'name' in value && 'slug' in value && 'type' in value);
+  }
+
+  getOrganizerLink(event: Event): string[] {
+    if (!event.organizerGroup || !this.isOrganizerObject(event.organizerGroup)) {
+      return ['/events'];
+    }
+
+    const base = event.organizerGroup.type === 'department' ? '/departments' : '/clubs';
+    return [base, event.organizerGroup.slug];
   }
 }
