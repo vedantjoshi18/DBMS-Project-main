@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { Observable } from 'rxjs';
+import { map } from 'rxjs/operators';
 import { Event } from '../../models/event.model';
 import { OrganizerGroup } from '../../models/organizer-group.model';
 import { EventService } from '../../services/event.service';
@@ -14,138 +15,194 @@ import { CategoryFilterPipe } from '../../pipes/category-filter.pipe';
   standalone: true,
   imports: [CommonModule, RouterModule, FormsModule, CategoryFilterPipe],
   template: `
+    <!-- Scroll progress bar -->
     <div class="scroll-progress" [style.transform]="'scaleX(' + scrollProgress + ')'" aria-hidden="true"></div>
 
+    <!-- ════ HERO ══════════════════════════════════════════════════════════ -->
     <section class="hero" id="home">
-      <div class="orbs" aria-hidden="true">
-        <span class="orb orb-red"></span>
-        <span class="orb orb-gold"></span>
-        <span class="orb orb-blue"></span>
-      </div>
-      <div class="section-inner hero-wrap">
+      <div class="hero-inner">
+
+        <!-- Left content column -->
         <div class="hero-copy">
-          <span class="section-badge">College Event Management Platform</span>
-          <h1 class="hero-title">Where Clubs, Departments, and Students <span class="gradient-text">Build Campus Culture</span></h1>
-          <p class="hero-subtitle">Discover technical sprints, cultural nights, workshops, and social drives through one unified event experience.</p>
+          <span class="hero-label">College Event Management Platform</span>
+
+          <h1 class="hero-display">
+            <span class="hero-line hero-line-1">DISCOVER</span>
+            <span class="hero-line hero-line-2">CAMPUS</span>
+            <span class="hero-line hero-line-3 accent-word">EVENTS</span>
+          </h1>
+
           <div class="hero-actions">
-            <a routerLink="/events" class="btn btn-primary">Browse Events</a>
-            <a routerLink="/explore" class="btn btn-glass">Explore Organizers</a>
-          </div>
-          <div class="hero-meta">
-            <div class="meta-pill">
-              <strong>{{ clubCount }}</strong>
-              <span>Active Clubs</span>
-            </div>
-            <div class="meta-pill">
-              <strong>{{ deptCount }}</strong>
-              <span>Departments</span>
-            </div>
-            <div class="meta-pill">
-              <strong>24/7</strong>
-              <span>Student Access</span>
-            </div>
+            <a routerLink="/events" class="btn-filled">Browse Events</a>
+            <a routerLink="/explore" class="btn-ghost">Explore Organizers</a>
           </div>
         </div>
-        <div
-          class="hero-panel glass-card"
-          (mousemove)="onHeroPanelMove($event)"
-          (mouseleave)="onHeroPanelLeave()"
-          [style.transform]="heroPanelTransform"
-        >
-          <div class="panel-head">
-            <span class="dot"></span>
-            <span class="dot"></span>
-            <span class="dot"></span>
-            <p>Campus Highlights</p>
-          </div>
-          <h3>Discover what is trending this week</h3>
-          <p>Featured selections are curated across clubs and departments so students can quickly find high-impact events.</p>
-          <a class="panel-link" routerLink="/events">View full calendar</a>
-        </div>
-      </div>
-    </section>
 
-    <nav class="quick-dock" aria-label="Quick section navigation">
-      <button type="button" (click)="scrollToSection('home')">Home</button>
-      <button type="button" (click)="scrollToSection('events')">Events</button>
-      <button type="button" (click)="scrollToSection('categories')">Groups</button>
-      <button type="button" (click)="scrollToSection('about')">About</button>
-      <button type="button" (click)="scrollToSection('contact')">Support</button>
-    </nav>
-
-    <section class="section scroll-reveal" #scrollSection>
-      <div class="section-inner">
-        <div class="section-header">
-          <span class="section-badge">Trending Now</span>
-          <h2 class="section-title">Hot <span class="gradient-text">Events</span></h2>
-          <p class="section-subtitle">Most saved and most discussed events right now</p>
-        </div>
-        <div class="hot-row">
-          <article class="event-card hot-card" *ngFor="let event of hotEvents$ | async" [routerLink]="['/event', event._id]">
-            <span class="hot-badge">HOT</span>
-            <img [src]="event.image" [alt]="event.title">
-            <div class="card-content">
-              <h3>{{ event.title }}</h3>
-              <p>{{ event.category }} · {{ event.date | date:'mediumDate' }}</p>
+        <!-- Right floating featured card -->
+        <div class="hero-card-wrap" *ngIf="featuredCard$ | async as fc">
+          <a class="hero-featured-card glass-card" [routerLink]="['/event', fc._id]">
+            <div class="hfc-image">
+              <img [src]="fc.image" [alt]="fc.title">
+              <span class="hfc-category">{{ fc.category }}</span>
             </div>
-          </article>
-        </div>
-      </div>
-    </section>
-
-    <section class="section scroll-reveal" #scrollSection>
-      <div class="section-inner">
-        <div class="section-header">
-          <span class="section-badge">Fresh Picks</span>
-          <h2 class="section-title">Recently <span class="gradient-text">Added</span></h2>
-        </div>
-        <div class="recent-grid timeline-grid">
-          <article class="event-card small timeline-card" *ngFor="let event of recentEvents$ | async; let i = index" [routerLink]="['/event', event._id]">
-            <span class="timeline-index">{{ i + 1 }}</span>
-            <img [src]="event.image" [alt]="event.title">
-            <div class="card-content">
-              <h3>{{ event.title }}</h3>
-              <p>{{ event.date | date:'mediumDate' }}</p>
+            <div class="hfc-body">
+              <span class="hfc-label">Featured Event</span>
+              <h3 class="hfc-title">{{ fc.title }}</h3>
+              <p class="hfc-date">{{ fc.date | date:'mediumDate' }}</p>
             </div>
-          </article>
-        </div>
-      </div>
-    </section>
-
-    <section class="section scroll-reveal" id="categories" #scrollSection>
-      <div class="section-inner">
-        <div class="section-header">
-          <span class="section-badge">Organizer Directory</span>
-          <h2 class="section-title">Explore by <span class="gradient-text">Category</span></h2>
-        </div>
-        <div class="explore-grid">
-          <a class="explore-card clubs-card" routerLink="/clubs">
-            <h3>Student Clubs</h3>
-            <p>{{ clubCount }} active clubs</p>
-            <div class="chip-row">
-              <span class="chip" *ngFor="let club of (clubs$ | async)?.slice(0,4)">{{ club.name }}</span>
-            </div>
-            <span class="cta">Explore Clubs →</span>
-          </a>
-          <a class="explore-card departments-card" routerLink="/departments">
-            <h3>Departments</h3>
-            <p>{{ deptCount }} departments</p>
-            <div class="chip-row">
-              <span class="chip" *ngFor="let dept of (departments$ | async)?.slice(0,4)">{{ dept.name }}</span>
-            </div>
-            <span class="cta">Explore Departments →</span>
           </a>
         </div>
+
+      </div>
+
+      <!-- Stats marquee strip -->
+      <div class="hero-stats-strip">
+        <div class="stats-track">
+          <span>{{ clubCount }} Active Clubs</span>
+          <span class="dot">·</span>
+          <span>{{ deptCount }} Departments</span>
+          <span class="dot">·</span>
+          <span>100+ Events Hosted</span>
+          <span class="dot">·</span>
+          <span>Open to All Students</span>
+          <span class="dot">·</span>
+          <!-- duplicate for seamless loop -->
+          <span>{{ clubCount }} Active Clubs</span>
+          <span class="dot">·</span>
+          <span>{{ deptCount }} Departments</span>
+          <span class="dot">·</span>
+          <span>100+ Events Hosted</span>
+          <span class="dot">·</span>
+          <span>Open to All Students</span>
+          <span class="dot">·</span>
+        </div>
       </div>
     </section>
 
-    <section class="section events-section scroll-reveal" id="events" #scrollSection>
-      <div class="section-inner">
+    <!-- ════ MARQUEE DIVIDER ══════════════════════════════════════════════ -->
+    <div class="marquee-strip">
+      <div class="marquee-track">
+        <span>TECHNICAL</span><span>·</span>
+        <span>CULTURAL</span><span>·</span>
+        <span>SPORTS</span><span>·</span>
+        <span>ACADEMIC</span><span>·</span>
+        <span>WORKSHOP</span><span>·</span>
+        <span>SEMINAR</span><span>·</span>
+        <span>TECHNICAL</span><span>·</span>
+        <span>CULTURAL</span><span>·</span>
+        <span>SPORTS</span><span>·</span>
+        <span>ACADEMIC</span><span>·</span>
+        <span>WORKSHOP</span><span>·</span>
+        <span>SEMINAR</span><span>·</span>
+      </div>
+    </div>
+
+    <!-- ════ HOT EVENTS — magazine spread ════════════════════════════════ -->
+    <section class="section" #scrollSection id="events">
+      <div class="section-inner scroll-reveal">
         <div class="section-header">
-          <span class="section-badge">Featured Events</span>
-          <h2 class="section-title">Campus <span class="gradient-text">Events</span></h2>
-          <p class="section-subtitle">Curated selections from active organizers</p>
+          <span class="section-eyebrow">01 · HOT EVENTS</span>
+          <h2 class="section-display-title">HOT <span class="accent-word">EVENTS</span></h2>
         </div>
+
+        <div class="magazine-grid">
+          <ng-container *ngIf="hotEvents$ | async as hotList">
+            <!-- Large hero card -->
+            <a class="mag-card mag-large"
+               *ngIf="hotList[0]"
+               [routerLink]="['/event', hotList[0]._id]">
+              <img [src]="hotList[0].image" [alt]="hotList[0].title">
+              <div class="mag-overlay">
+                <span class="mag-cat">{{ hotList[0].category }}</span>
+                <h3 class="mag-title">{{ hotList[0].title }}</h3>
+                <p class="mag-date">{{ hotList[0].date | date:'mediumDate' }}</p>
+              </div>
+            </a>
+            <!-- Small stack -->
+            <div class="mag-stack">
+              <a class="mag-card mag-small"
+                 *ngFor="let ev of hotList.slice(1,5)"
+                 [routerLink]="['/event', ev._id]">
+                <img [src]="ev.image" [alt]="ev.title">
+                <div class="mag-overlay">
+                  <span class="mag-cat">{{ ev.category }}</span>
+                  <h3 class="mag-title">{{ ev.title }}</h3>
+                </div>
+              </a>
+            </div>
+          </ng-container>
+        </div>
+      </div>
+    </section>
+
+    <!-- ════ RECENT EVENTS — strip/editorial list ════════════════════════ -->
+    <section class="section" #scrollSection>
+      <div class="section-inner scroll-reveal">
+        <div class="section-header">
+          <span class="section-eyebrow">02 · RECENTLY ADDED</span>
+          <h2 class="section-display-title">RECENTLY <span class="accent-word">ADDED</span></h2>
+        </div>
+
+        <div class="strip-list" *ngIf="recentEvents$ | async as recents">
+          <a class="strip-card" *ngFor="let ev of recents; let i = index" [routerLink]="['/event', ev._id]">
+            <span class="strip-num">{{ (i + 1).toString().padStart(2, '0') }}</span>
+            <div class="strip-img"><img [src]="ev.image" [alt]="ev.title"></div>
+            <div class="strip-info">
+              <span class="strip-category">{{ ev.category }}</span>
+              <h4 class="strip-title">{{ ev.title }}</h4>
+              <p class="strip-meta">{{ ev.date | date:'mediumDate' }}</p>
+            </div>
+            <span class="strip-arrow">→</span>
+          </a>
+        </div>
+      </div>
+    </section>
+
+    <!-- ════ ORGANIZER DIRECTORY ═════════════════════════════════════════ -->
+    <section class="section" #scrollSection id="categories">
+      <div class="section-inner scroll-reveal">
+        <div class="section-header">
+          <span class="section-eyebrow">03 · EXPLORE BY CATEGORY</span>
+          <h2 class="section-display-title">EXPLORE BY <span class="accent-word">CATEGORY</span></h2>
+        </div>
+
+        <div class="org-grid">
+          <a class="org-card clubs-card" routerLink="/clubs">
+            <div class="org-card-bg"></div>
+            <div class="org-card-content">
+              <span class="org-type">Student Clubs</span>
+              <h3 class="org-count">{{ clubCount }}</h3>
+              <p class="org-sub">Active clubs</p>
+              <div class="org-tags">
+                <span class="org-tag" *ngFor="let club of (clubs$ | async)?.slice(0,4)">{{ club.name }}</span>
+              </div>
+              <span class="org-cta">Explore →</span>
+            </div>
+          </a>
+          <a class="org-card depts-card" routerLink="/departments">
+            <div class="org-card-bg"></div>
+            <div class="org-card-content">
+              <span class="org-type">Departments</span>
+              <h3 class="org-count">{{ deptCount }}</h3>
+              <p class="org-sub">Academic organizers</p>
+              <div class="org-tags">
+                <span class="org-tag" *ngFor="let dept of (departments$ | async)?.slice(0,4)">{{ dept.name }}</span>
+              </div>
+              <span class="org-cta">Explore →</span>
+            </div>
+          </a>
+        </div>
+      </div>
+    </section>
+
+    <!-- ════ FEATURED EVENTS w/ filter ══════════════════════════════════ -->
+    <section class="section events-section" #scrollSection>
+      <div class="section-inner scroll-reveal">
+        <div class="section-header">
+          <span class="section-eyebrow">04 · FEATURED EVENTS</span>
+          <h2 class="section-display-title">FEATURED <span class="accent-word">EVENTS</span></h2>
+        </div>
+
         <div class="filter-bar">
           <select [(ngModel)]="selectedCategory" class="filter-select">
             <option value="All">All Categories</option>
@@ -160,335 +217,658 @@ import { CategoryFilterPipe } from '../../pipes/category-filter.pipe';
             <option value="Other">Other</option>
           </select>
         </div>
-        <div class="recent-grid">
-          <article class="event-card featured-card" *ngFor="let event of (featuredEvents$ | async) | categoryFilter:selectedCategory" [routerLink]="['/event', event._id]">
-            <img [src]="event.image" [alt]="event.title">
-            <div class="card-content">
-              <h3>{{ event.title }}</h3>
-              <p>{{ event.category }} · {{ event.date | date:'mediumDate' }}</p>
+
+        <div class="stack-grid">
+          <a class="stack-card" *ngFor="let ev of (featuredEvents$ | async) | categoryFilter:selectedCategory; let i = index"
+             [routerLink]="['/event', ev._id]"
+             [style.animation-delay]="(i * 0.07) + 's'">
+            <div class="sc-image">
+              <img [src]="ev.image" [alt]="ev.title">
+              <span class="sc-category">{{ ev.category }}</span>
             </div>
-          </article>
+            <div class="sc-body">
+              <h3 class="sc-title">{{ ev.title }}</h3>
+              <p class="sc-date">{{ ev.date | date:'mediumDate' }}</p>
+            </div>
+          </a>
         </div>
       </div>
     </section>
 
-    <section class="section scroll-reveal" id="about" #scrollSection>
-      <div class="section-inner">
-        <div class="section-header info-block">
-          <span class="section-badge">About The Platform</span>
-          <h2 class="section-title">Built for <span class="gradient-text">Campus Life</span></h2>
-          <p class="section-subtitle">EventHub unifies registrations, organizer discovery, and event visibility across every school experience.</p>
+    <!-- ════ ABOUT ════════════════════════════════════════════════════════ -->
+    <section class="section" #scrollSection id="about">
+      <div class="section-inner about-inner scroll-reveal">
+        <div class="about-text-block">
+          <div class="section-header">
+            <span class="section-eyebrow">05 · ABOUT</span>
+            <h2 class="section-display-title">BUILT FOR <span class="accent-word">CAMPUS LIFE</span></h2>
+          </div>
+          <p class="about-body">
+            EventHub unifies registrations, organizer discovery, and event visibility
+            across every student experience — from hackathons to cultural nights.
+          </p>
         </div>
       </div>
     </section>
 
-    <section class="section scroll-reveal" id="contact" #scrollSection>
-      <div class="section-inner">
-        <div class="section-header info-block contact-block">
-          <span class="section-badge">Support</span>
-          <h2 class="section-title">Need <span class="gradient-text">Help?</span></h2>
-          <p class="section-subtitle">Reach the event desk for ticketing, organizer onboarding, and event publishing support.</p>
+    <!-- ════ FOOTER ═══════════════════════════════════════════════════════ -->
+    <footer class="site-footer">
+      <div class="section-inner footer-inner">
+        <div class="footer-logo">
+          <span class="footer-event">EVENT</span><span class="footer-hub">HUB</span>
         </div>
+        <p class="footer-note">© {{ year }} EventHub College Platform</p>
       </div>
-    </section>
-
-    <footer class="section">
-      <div class="section-inner footer-text">© {{ year }} EventHub College Platform</div>
     </footer>
   `,
   styles: [`
     :host {
       display: block;
-      color: #fdf7f2;
-      font-family: 'Sora', 'Segoe UI', Tahoma, sans-serif;
-      --accent-warm: #f28743;
-      --accent-gold: #f8d889;
-      --accent-cool: #a6ceff;
-      --surface-border: rgba(255, 255, 255, 0.13);
-      --surface-bg: rgba(255, 255, 255, 0.05);
-      background:
-        radial-gradient(circle at 10% 20%, rgba(207, 66, 32, 0.18), transparent 44%),
-        radial-gradient(circle at 85% 12%, rgba(236, 185, 86, 0.12), transparent 38%),
-        linear-gradient(180deg, #120b08 0%, #171412 45%, #101317 100%);
+      background: var(--bg-void);
+      color: var(--text-primary);
     }
+
+    /* ── Scroll progress ──────────────────────── */
     .scroll-progress {
       position: fixed;
-      top: 0;
-      left: 0;
+      top: 0; left: 0;
       width: 100%;
-      height: 3px;
+      height: 2px;
       transform-origin: left center;
-      background: linear-gradient(90deg, var(--accent-warm), var(--accent-gold), var(--accent-cool));
+      background: var(--accent);
       z-index: 90;
-      box-shadow: 0 0 20px rgba(248, 216, 137, 0.5);
-    }
-    .section { padding: 84px 0; }
-    .section-inner { width: min(1200px, 92vw); margin: 0 auto; }
-    .section-header { margin-bottom: 26px; }
-    .section-badge {
-      display: inline-block;
-      background: rgba(242, 132, 70, 0.14);
-      border: 1px solid rgba(242, 132, 70, 0.28);
-      color: #ffc18f;
-      border-radius: 999px;
-      padding: 6px 12px;
-      font-size: 0.76rem;
-      letter-spacing: 0.04em;
-      text-transform: uppercase;
-    }
-    .section-title { font-size: clamp(1.9rem, 4vw, 2.9rem); margin: 12px 0; line-height: 1.15; }
-    .gradient-text {
-      background: linear-gradient(135deg, #f28743 0%, #f8d889 58%, #a6ceff 100%);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-    }
-    .section-subtitle { color: rgba(253, 247, 242, 0.74); }
-    .glass-card {
-      border: 1px solid var(--surface-border);
-      background: linear-gradient(150deg, rgba(255, 255, 255, 0.09), rgba(255, 255, 255, 0.02));
-      backdrop-filter: blur(18px);
-      border-radius: 18px;
     }
 
+    /* ── HERO ─────────────────────────────────── */
     .hero {
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      padding: 140px 0 0;
       position: relative;
       overflow: hidden;
-      padding: 104px 0 72px;
     }
-    .orbs {
-      position: absolute;
-      inset: 0;
-      pointer-events: none;
-      z-index: 0;
-    }
-    .orb {
-      position: absolute;
-      border-radius: 999px;
-      filter: blur(32px);
-      opacity: 0.6;
-      animation: floatPulse 7s ease-in-out infinite;
-    }
-    .orb-red { width: 220px; height: 220px; left: 5%; top: 7%; background: rgba(245, 92, 53, 0.4); }
-    .orb-gold { width: 170px; height: 170px; right: 15%; top: 18%; background: rgba(247, 198, 92, 0.34); animation-delay: 1.1s; }
-    .orb-blue { width: 150px; height: 150px; right: 8%; bottom: 16%; background: rgba(107, 162, 232, 0.25); animation-delay: 2.2s; }
-    @keyframes floatPulse {
-      0%, 100% { transform: translateY(0); }
-      50% { transform: translateY(-12px); }
-    }
-    .hero-wrap {
-      position: relative;
-      z-index: 1;
+    .hero-inner {
+      width: min(1300px, 92vw);
+      margin: 0 auto;
       display: grid;
-      grid-template-columns: 1.2fr 0.8fr;
-      gap: 30px;
-      align-items: end;
+      grid-template-columns: 1fr auto;
+      gap: 40px;
+      align-items: center;
+      flex: 1;
+      padding-bottom: 80px;
     }
-    .hero-copy { animation: fadeUp 0.7s ease both; }
-    .hero-title { font-size: clamp(2.2rem, 6vw, 4rem); line-height: 1.05; margin: 16px 0; letter-spacing: -0.02em; }
-    .hero-subtitle { max-width: 70ch; color: rgba(253, 247, 242, 0.79); }
-    .hero-actions { display: flex; gap: 12px; margin-top: 22px; flex-wrap: wrap; }
-    .btn {
+    .hero-label {
+      font-family: 'DM Sans', sans-serif;
+      font-size: 0.72rem;
+      letter-spacing: 0.16em;
+      text-transform: uppercase;
+      color: rgba(245,240,235,.35);
+      display: block;
+      margin-bottom: 28px;
+      animation: fadeUp 0.6s 0.1s both;
+    }
+    .hero-display {
+      display: flex;
+      flex-direction: column;
+      gap: 0;
+      margin: 0 0 40px;
+    }
+    .hero-line {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: clamp(5rem, 13vw, 13rem);
+      line-height: 0.88;
+      letter-spacing: 0.01em;
+      color: var(--text-primary);
+      display: block;
+    }
+    .hero-line-1 { animation: fadeUp 0.7s 0.2s both; }
+    .hero-line-2 { animation: fadeUp 0.7s 0.35s both; }
+    .hero-line-3 { animation: fadeUp 0.7s 0.5s both; }
+    .accent-word { color: var(--accent) !important; }
+
+    .hero-actions {
+      display: flex;
+      gap: 14px;
+      flex-wrap: wrap;
+      animation: fadeUp 0.6s 0.7s both;
+    }
+    .btn-filled {
+      background: #c8372d;
+      color: #fff;
+      padding: 14px 32px;
+      border-radius: 999px;
+      font-family: 'DM Sans', sans-serif;
+      font-size: 0.85rem;
+      font-weight: 600;
+      letter-spacing: 0.07em;
+      text-transform: uppercase;
+      border: none;
+      cursor: pointer;
       text-decoration: none;
-      border-radius: 12px;
-      padding: 12px 18px;
-      font-weight: 700;
       display: inline-flex;
       align-items: center;
-      letter-spacing: 0.01em;
-      transition: transform 0.2s ease, box-shadow 0.2s ease;
-    }
-    .btn:hover { transform: translateY(-2px); }
-    .btn-primary {
-      background: linear-gradient(135deg, #f26a34 0%, #ca431e 100%);
-      color: #fff8f1;
-      box-shadow: 0 12px 24px rgba(202, 67, 30, 0.3);
-    }
-    .btn-glass {
-      background: rgba(255, 255, 255, 0.06);
-      color: #fff8f1;
-      border: 1px solid rgba(255, 255, 255, 0.17);
-    }
-    .hero-meta {
-      margin-top: 20px;
-      display: flex;
-      flex-wrap: wrap;
-      gap: 10px;
-    }
-    .meta-pill {
-      border: 1px solid rgba(255, 255, 255, 0.18);
-      border-radius: 12px;
-      padding: 9px 12px;
-      background: rgba(255, 255, 255, 0.04);
-      min-width: 120px;
-    }
-    .meta-pill strong { display: block; font-size: 1.1rem; }
-    .meta-pill span { color: rgba(253, 247, 242, 0.74); font-size: 0.8rem; }
-
-    .hero-panel { padding: 16px; animation: fadeUp 0.85s ease both; }
-    .panel-head { display: flex; gap: 6px; align-items: center; margin-bottom: 10px; }
-    .dot { width: 8px; height: 8px; border-radius: 999px; background: rgba(255, 255, 255, 0.4); }
-    .panel-head p { margin: 0 0 0 8px; color: rgba(253, 247, 242, 0.72); font-size: 0.83rem; }
-    .hero-panel h3 { margin: 0 0 8px; font-size: 1.2rem; }
-    .hero-panel p { margin: 0; color: rgba(253, 247, 242, 0.74); line-height: 1.6; }
-    .panel-link { margin-top: 16px; display: inline-flex; color: #ffcf9d; text-decoration: none; font-weight: 700; }
-
-    .quick-dock {
-      position: fixed;
-      right: 18px;
-      top: 50%;
-      transform: translateY(-50%);
-      z-index: 70;
-      display: grid;
       gap: 8px;
-      padding: 10px;
-      border-radius: 14px;
-      border: 1px solid var(--surface-border);
-      background: rgba(12, 13, 17, 0.6);
-      backdrop-filter: blur(12px);
+      transition: background 0.15s, transform 0.15s;
     }
-    .quick-dock button {
-      border: 1px solid rgba(255, 255, 255, 0.2);
-      background: rgba(255, 255, 255, 0.04);
-      color: #fdf7f2;
-      border-radius: 10px;
-      padding: 7px 10px;
-      font-size: 0.75rem;
+    .btn-filled:hover { background: #e8572d; transform: translateY(-1px); }
+    .btn-ghost {
+      background: transparent;
+      color: var(--text-primary);
+      padding: 13px 31px;
+      border: 1px solid var(--border-hi);
+      border-radius: 999px;
+      font-family: 'DM Sans', sans-serif;
+      font-size: 0.85rem;
+      font-weight: 600;
+      letter-spacing: 0.07em;
+      text-transform: uppercase;
       cursor: pointer;
-      transition: transform 0.2s ease, border-color 0.2s ease;
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      transition: border-color 0.15s, background 0.15s;
     }
-    .quick-dock button:hover {
-      transform: translateX(-2px);
-      border-color: rgba(248, 216, 137, 0.7);
-    }
+    .btn-ghost:hover { border-color: var(--text-primary); background: rgba(245,240,235,.04); }
 
-    .hot-row {
-      display: grid;
-      grid-auto-flow: column;
-      grid-auto-columns: minmax(270px, 340px);
-      gap: 16px;
-      overflow: auto;
-      padding-bottom: 8px;
+    /* Hero featured card */
+    .hero-card-wrap {
+      animation: fadeUp 0.8s 0.4s both;
     }
-    .recent-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 16px; }
-    .timeline-grid { grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); }
-    .event-card {
-      position: relative;
-      background: var(--surface-bg);
-      backdrop-filter: blur(18px);
-      border: 1px solid rgba(255, 255, 255, 0.11);
-      border-radius: 16px;
-      overflow: hidden;
-      cursor: pointer;
-      transition: transform 0.2s ease, border-color 0.2s ease;
-    }
-    .event-card:hover {
-      transform: translateY(-4px);
-      border-color: rgba(244, 166, 109, 0.52);
-    }
-    .event-card img { width: 100%; height: 170px; object-fit: cover; }
-    .event-card.small img { height: 135px; }
-    .card-content { padding: 14px; }
-    .card-content h3 { margin: 0 0 6px; font-size: 1rem; }
-    .card-content p { margin: 0; color: rgba(253, 247, 242, 0.72); font-size: 0.9rem; }
-    .hot-badge {
-      position: absolute;
-      top: 12px;
-      left: 12px;
-      background: linear-gradient(135deg, #fa7a3d, #d85a1b);
-      color: #fff;
-      padding: 4px 10px;
-      border-radius: 50px;
-      font-size: 0.7rem;
-      font-weight: 800;
-      letter-spacing: 0.05em;
-      box-shadow: 0 4px 14px rgba(216, 90, 27, 0.45);
-    }
-    .timeline-card { padding-top: 18px; }
-    .timeline-index {
-      position: absolute;
-      top: 8px;
-      right: 10px;
-      color: rgba(253, 247, 242, 0.45);
-      font-size: 1.4rem;
-      font-weight: 800;
-    }
-
-    .explore-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
-    .explore-card {
+    .hero-featured-card {
       display: block;
       text-decoration: none;
-      color: #fff8f1;
-      padding: 24px;
-      border-radius: 18px;
-      border: 1px solid rgba(255, 255, 255, 0.12);
-      backdrop-filter: blur(20px);
-      transition: transform 0.2s ease, box-shadow 0.2s ease;
-    }
-    .explore-card:hover { transform: translateY(-4px); }
-    .clubs-card {
-      background: linear-gradient(160deg, rgba(247, 123, 68, 0.33), rgba(16, 15, 14, 0.9));
-      box-shadow: 0 20px 40px rgba(155, 63, 28, 0.22);
-    }
-    .departments-card {
-      background: linear-gradient(160deg, rgba(86, 136, 214, 0.28), rgba(15, 17, 22, 0.92));
-      box-shadow: 0 20px 40px rgba(48, 92, 163, 0.2);
-    }
-    .chip-row { display: flex; flex-wrap: wrap; gap: 8px; margin: 12px 0; }
-    .chip {
-      border: 1px solid rgba(255, 255, 255, 0.24);
-      border-radius: 999px;
-      padding: 4px 10px;
-      font-size: 0.75rem;
-      background: rgba(255, 255, 255, 0.06);
-    }
-    .cta { color: #ffe1bf; font-weight: 700; }
-
-    .filter-bar { margin-bottom: 16px; }
-    .filter-select {
-      background: rgba(255, 255, 255, 0.07);
-      color: #fff8f1;
-      border: 1px solid rgba(255, 255, 255, 0.18);
-      border-radius: 10px;
-      padding: 10px 12px;
-      min-width: 230px;
-    }
-    .featured-card { border-color: rgba(248, 190, 130, 0.28); }
-
-    .info-block {
-      padding: 20px;
-      border: 1px solid var(--surface-border);
+      width: 260px;
       border-radius: 16px;
-      background: var(--surface-bg);
+      overflow: hidden;
+      background: var(--bg-surface);
+      border: 1px solid var(--border-mid);
+      transition: transform 0.35s ease;
     }
-    .contact-block {
-      background: linear-gradient(160deg, rgba(107, 162, 232, 0.14), rgba(255, 255, 255, 0.03));
+    .hero-featured-card:hover { transform: translateY(-6px); }
+    .hfc-image { position: relative; height: 180px; overflow: hidden; background: var(--bg-lift); }
+    .hfc-image img { width: 100%; height: 100%; object-fit: cover; }
+    .hfc-category {
+      position: absolute;
+      top: 10px; left: 10px;
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 0.75rem;
+      font-style: italic;
+      color: #f5f0eb;
+      background: rgba(8,8,8,.6);
+      padding: 3px 8px;
+      border-radius: 4px;
     }
-    .footer-text { color: rgba(253, 247, 242, 0.58); text-align: center; }
-    .scroll-reveal { opacity: 0; transform: translateY(22px); transition: all 0.6s ease; }
-    .scroll-reveal.visible { opacity: 1; transform: translateY(0); }
+    .hfc-body { padding: 16px; }
+    .hfc-label {
+      font-family: 'DM Sans', sans-serif;
+      font-size: 0.67rem;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: var(--accent);
+      display: block;
+      margin-bottom: 6px;
+    }
+    .hfc-title {
+      font-family: 'DM Sans', sans-serif;
+      font-size: 1rem;
+      font-weight: 600;
+      color: #f5f0eb;
+      margin: 0 0 8px;
+      line-height: 1.3;
+    }
+    .hfc-date {
+      font-family: 'DM Sans', sans-serif;
+      font-size: 0.78rem;
+      color: rgba(245,240,235,.45);
+      margin: 0;
+    }
+
+    /* Stats strip */
+    .hero-stats-strip {
+      overflow: hidden;
+      border-top: 1px solid var(--border-subtle);
+      background: var(--bg-deep);
+      padding: 16px 0;
+      animation: fadeUp 0.6s 0.9s both;
+    }
+    .stats-track {
+      display: flex;
+      gap: 0;
+      animation: marqueeScroll 25s linear infinite;
+      width: max-content;
+    }
+    .stats-track span {
+      font-family: 'DM Sans', sans-serif;
+      font-size: 0.78rem;
+      font-weight: 500;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: rgba(245,240,235,.4);
+      padding: 0 22px;
+      white-space: nowrap;
+    }
+    .stats-track .dot { color: var(--accent); padding: 0 4px; }
+    @keyframes marqueeScroll {
+      from { transform: translateX(0); }
+      to   { transform: translateX(-50%); }
+    }
+
+    /* ── MARQUEE DIVIDER ─────────────────────── */
+    .marquee-strip {
+      overflow: hidden;
+      border-top: 1px solid var(--border-subtle);
+      border-bottom: 1px solid var(--border-subtle);
+      padding: 14px 0;
+      background: var(--bg-deep);
+    }
+    .marquee-track {
+      display: flex;
+      animation: marqueeScroll 30s linear infinite;
+      width: max-content;
+    }
+    .marquee-track span {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 0.9rem;
+      letter-spacing: 0.16em;
+      color: var(--text-muted);
+      padding: 0 24px;
+      white-space: nowrap;
+    }
+
+    /* ── SECTIONS ────────────────────────────── */
+    .section {
+      padding: 100px 0;
+      background: var(--bg-void);
+      position: relative;
+      overflow: hidden;
+    }
+    .section-inner {
+      width: min(1300px, 92vw);
+      margin: 0 auto;
+    }
+    /* ── SECTION HEADER ──────────────────────── */
+    .section-header {
+      padding-bottom: 20px;
+      border-bottom: 1px solid var(--border-subtle);
+      margin-bottom: 44px;
+    }
+    .section-eyebrow {
+      display: block;
+      font-family: 'DM Sans', sans-serif;
+      font-size: 0.68rem;
+      font-weight: 500;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: rgba(245,240,235,.28);
+      margin-bottom: 10px;
+    }
+    .section-display-title {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: clamp(2.4rem, 4.5vw, 5rem);
+      line-height: 0.92;
+      color: var(--text-primary);
+      margin: 0;
+    }
+
+    /* ── MAGAZINE GRID (hot events) ──────────── */
+    .magazine-grid {
+      display: grid;
+      grid-template-columns: 60% 1fr;
+      gap: 12px;
+      height: clamp(340px, 42vw, 580px);
+    }
+    .mag-card {
+      position: relative;
+      overflow: hidden;
+      border-radius: var(--radius-md);
+      display: block;
+      text-decoration: none;
+      cursor: pointer;
+    }
+    .mag-card img {
+      width: 100%; height: 100%;
+      object-fit: cover;
+      transition: transform 0.5s ease;
+    }
+    .mag-card:hover img { transform: scale(1.04); }
+    .mag-overlay {
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(to top, rgba(8,8,8,.9) 0%, transparent 55%);
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-end;
+      padding: 24px;
+      gap: 6px;
+    }
+    .mag-cat {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 0.8rem;
+      font-style: italic;
+      color: rgba(245,240,235,.7);
+      letter-spacing: 0.06em;
+    }
+    .mag-title {
+      font-family: 'DM Sans', sans-serif;
+      font-size: 1.1rem;
+      font-weight: 600;
+      color: #f5f0eb;
+      margin: 0;
+      line-height: 1.3;
+    }
+    .mag-large .mag-title {
+      font-size: 1.6rem;
+    }
+    .mag-date {
+      font-family: 'DM Sans', sans-serif;
+      font-size: 0.78rem;
+      color: rgba(245,240,235,.5);
+      margin: 0;
+    }
+    .mag-stack {
+      display: grid;
+      grid-template-rows: repeat(2, 1fr);
+      gap: 12px;
+    }
+
+    /* ── STRIP LIST (recent events) ──────────── */
+    .strip-list { display: flex; flex-direction: column; }
+    .strip-card {
+      display: grid;
+      grid-template-columns: 52px 110px 1fr auto;
+      gap: 20px;
+      align-items: center;
+      padding: 18px 0;
+      border-bottom: 1px solid var(--border-subtle);
+      text-decoration: none;
+      color: inherit;
+      transition: background 0.2s ease, border-color 0.2s ease;
+    }
+    .strip-card:hover {
+      background: rgba(245,240,235,.04);
+      border-bottom-color: rgba(245,240,235,.06);
+    }
+    .strip-num {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 2.8rem;
+      line-height: 1;
+      color: var(--border-mid);
+    }
+    .strip-img {
+      width: 110px; height: 72px;
+      border-radius: 8px;
+      overflow: hidden;
+      flex-shrink: 0;
+      background: var(--bg-lift);
+    }
+    .strip-img img { width: 100%; height: 100%; object-fit: cover; }
+    .strip-info { min-width: 0; }
+    .strip-category {
+      font-family: 'DM Sans', sans-serif;
+      font-size: 0.67rem;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: var(--accent);
+      display: block;
+      margin-bottom: 4px;
+    }
+    .strip-title {
+      font-family: 'DM Sans', sans-serif;
+      font-size: 1rem;
+      font-weight: 600;
+      color: #f5f0eb;
+      margin: 0 0 4px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .strip-meta {
+      font-family: 'DM Sans', sans-serif;
+      font-size: 0.78rem;
+      color: var(--text-muted);
+      margin: 0;
+    }
+    .strip-arrow {
+      font-family: 'DM Sans', sans-serif;
+      color: var(--text-muted);
+      font-size: 1rem;
+      transition: transform 0.2s ease, color 0.2s ease;
+    }
+    .strip-card:hover .strip-arrow { transform: translateX(4px); color: var(--text-primary); }
+
+    /* ── ORGANIZER CARDS ─────────────────────── */
+    .org-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+    }
+    .org-card {
+      position: relative;
+      display: block;
+      text-decoration: none;
+      overflow: hidden;
+      border-radius: var(--radius-md);
+      border: 1px solid var(--border-subtle);
+      padding: 36px;
+      min-height: 280px;
+      transition: border-color 0.3s ease;
+    }
+    .org-card:hover { border-color: var(--border-mid); }
+    .clubs-card { background: rgba(200,55,45,.06); }
+    .depts-card { background: rgba(100,140,200,.06); }
+    .org-card-content {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      height: 100%;
+    }
+    .org-type {
+      font-family: 'DM Sans', sans-serif;
+      font-size: 0.72rem;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: var(--text-muted);
+    }
+    .org-count {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 5rem;
+      line-height: 0.9;
+      color: var(--text-primary);
+      margin: 0;
+    }
+    .org-sub {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 1rem;
+      font-style: italic;
+      color: var(--text-secondary);
+      margin: 0;
+    }
+    .org-tags {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin-top: 12px;
+    }
+    .org-tag {
+      font-family: 'DM Sans', sans-serif;
+      font-size: 0.72rem;
+      padding: 4px 10px;
+      border: 1px solid var(--border-mid);
+      border-radius: 999px;
+      color: var(--text-secondary);
+    }
+    .org-cta {
+      font-family: 'DM Sans', sans-serif;
+      font-size: 0.82rem;
+      font-weight: 600;
+      letter-spacing: 0.06em;
+      color: var(--accent);
+      margin-top: auto;
+      padding-top: 16px;
+    }
+
+    /* ── STACK GRID (featured events) ────────── */
+    .stack-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+      gap: 16px;
+    }
+    .stack-card {
+      display: block;
+      text-decoration: none;
+      border-radius: var(--radius-md);
+      overflow: hidden;
+      background: var(--bg-surface);
+      border: 1px solid var(--border-subtle);
+      transition: transform 0.3s ease, border-color 0.3s ease;
+    }
+    .stack-card:hover { transform: translateY(-4px); border-color: var(--border-mid); }
+    .sc-image { position: relative; height: 200px; overflow: hidden; background: var(--bg-lift); }
+    .sc-image img { width: 100%; height: 100%; object-fit: cover; transition: transform 0.4s ease; }
+    .stack-card:hover .sc-image img { transform: scale(1.04); }
+    .sc-category {
+      position: absolute;
+      top: 10px; left: 10px;
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 0.75rem;
+      font-style: italic;
+      color: #f5f0eb;
+      background: rgba(8,8,8,.6);
+      padding: 3px 8px;
+      border-radius: 4px;
+    }
+    .sc-body { padding: 16px; }
+    .sc-title {
+      font-family: 'DM Sans', sans-serif;
+      font-size: 1rem;
+      font-weight: 600;
+      color: #f5f0eb;
+      margin: 0 0 8px;
+      line-height: 1.4;
+    }
+    .sc-date {
+      font-family: 'DM Sans', sans-serif;
+      font-size: 0.78rem;
+      color: var(--text-muted);
+      margin: 0;
+    }
+
+    /* ── ABOUT ───────────────────────────────── */
+    .about-inner {
+      display: flex;
+      align-items: flex-start;
+      gap: 60px;
+    }
+    .about-text-block {
+      max-width: 680px;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+    .about-body {
+      font-family: 'DM Sans', sans-serif;
+      font-size: 1.1rem;
+      font-weight: 300;
+      line-height: 1.8;
+      color: var(--text-secondary);
+      max-width: 52ch;
+    }
+
+    /* ── FOOTER ──────────────────────────────── */
+    .site-footer {
+      border-top: 1px solid var(--border-subtle);
+      padding: 48px 0;
+      background: var(--bg-void);
+    }
+    .footer-inner {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 16px;
+    }
+    .footer-logo { display: flex; align-items: baseline; }
+    .footer-event {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 1.3rem;
+      letter-spacing: 0.04em;
+      color: var(--text-primary);
+    }
+    .footer-hub {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 1.3rem;
+      letter-spacing: 0.04em;
+      color: var(--accent);
+    }
+    .footer-note {
+      font-family: 'DM Sans', sans-serif;
+      font-size: 0.78rem;
+      color: var(--text-muted);
+      margin: 0;
+    }
+
+    /* ── SCROLL REVEAL ───────────────────────── */
+    .scroll-reveal {
+      opacity: 0;
+      transform: translateY(22px);
+      transition: opacity 0.8s cubic-bezier(0.16,1,0.3,1), transform 0.8s cubic-bezier(0.16,1,0.3,1);
+    }
+    /* direct .visible OR parent section carrying .visible */
+    .scroll-reveal.visible,
+    .section.visible > .scroll-reveal { opacity: 1; transform: translateY(0); }
+
+    /* ── FILTER BAR ──────────────────────────── */
+    .filter-bar { display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 32px; }
+    .filter-select {
+      appearance: none;
+      -webkit-appearance: none;
+      padding: 10px 38px 10px 18px;
+      font-family: 'DM Sans', sans-serif;
+      font-size: 0.82rem;
+      font-weight: 500;
+      letter-spacing: 0.04em;
+      color: var(--text-primary);
+      background: var(--bg-surface);
+      border: 1px solid var(--border-mid);
+      border-radius: 999px;
+      cursor: pointer;
+      transition: border-color 0.15s;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%23f5f0eb' stroke-width='2'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: right 14px center;
+      background-size: 12px;
+      min-width: 180px;
+    }
+    .filter-select:hover { border-color: var(--border-hi); }
+    .filter-select:focus { outline: none; border-color: var(--accent); }
+    .filter-select option { background: var(--bg-surface); color: var(--text-primary); }
+
+    /* ── KEYFRAMES ───────────────────────────── */
     @keyframes fadeUp {
-      from { opacity: 0; transform: translateY(20px); }
-      to { opacity: 1; transform: translateY(0); }
+      from { opacity: 0; transform: translateY(32px); }
+      to   { opacity: 1; transform: translateY(0); }
     }
-    @media (max-width: 980px) {
-      .hero-wrap { grid-template-columns: 1fr; }
-      .hero-panel { max-width: 620px; }
-      .explore-grid { grid-template-columns: 1fr; }
-      .quick-dock {
-        top: auto;
-        right: 12px;
-        left: 12px;
-        bottom: 12px;
-        transform: none;
-        grid-template-columns: repeat(5, minmax(0, 1fr));
-      }
-      .quick-dock button { padding: 8px 6px; font-size: 0.7rem; }
+
+    /* ── RESPONSIVE ──────────────────────────── */
+    @media (max-width: 1100px) {
+      .magazine-grid { grid-template-columns: 1fr; height: auto; }
+      .mag-large { height: 400px; }
+      .mag-stack { grid-template-rows: none; grid-template-columns: repeat(2, 1fr); }
+      .mag-small { height: 200px; }
+    }
+    @media (max-width: 900px) {
+      .hero-inner { grid-template-columns: 1fr; }
+      .hero-card-wrap { display: none; }
+      .org-grid { grid-template-columns: 1fr; }
     }
     @media (max-width: 640px) {
-      .section { padding: 66px 0; }
-      .hero { padding: 92px 0 56px; }
-      .hero-title { font-size: clamp(1.9rem, 10vw, 2.8rem); }
-      .filter-select { min-width: 100%; }
+      .strip-card { grid-template-columns: 40px 80px 1fr; }
+      .strip-arrow { display: none; }
+      .about-inner { flex-direction: column; gap: 24px; }
+      .footer-inner { flex-direction: column; align-items: flex-start; }
     }
   `]
 })
@@ -501,6 +881,7 @@ export class HomeComponent implements AfterViewInit {
   hotEvents$: Observable<Event[]> = this.eventService.getHotEvents();
   recentEvents$: Observable<Event[]> = this.eventService.getRecentEvents();
   featuredEvents$: Observable<Event[]> = this.eventService.getFeaturedEvents();
+  featuredCard$: Observable<Event | undefined> = this.eventService.getFeaturedEvents().pipe(map(events => events?.[0]));
   clubs$: Observable<OrganizerGroup[]> = this.groupService.getAllGroups('club');
   departments$: Observable<OrganizerGroup[]> = this.groupService.getAllGroups('department');
 
@@ -509,20 +890,10 @@ export class HomeComponent implements AfterViewInit {
   selectedCategory = 'All';
   year = new Date().getFullYear();
   scrollProgress = 0;
-  heroTiltX = 0;
-  heroTiltY = 0;
-
-  get heroPanelTransform(): string {
-    return `perspective(900px) rotateX(${this.heroTiltX}deg) rotateY(${this.heroTiltY}deg)`;
-  }
 
   ngAfterViewInit(): void {
-    this.clubs$.subscribe((items) => {
-      this.clubCount = items.length;
-    });
-    this.departments$.subscribe((items) => {
-      this.deptCount = items.length;
-    });
+    this.clubs$.subscribe(items => { this.clubCount = items.length; });
+    this.departments$.subscribe(items => { this.deptCount = items.length; });
     this.initScrollAnimations();
   }
 
@@ -533,44 +904,13 @@ export class HomeComponent implements AfterViewInit {
     this.scrollProgress = total > 0 ? Math.min(1, current / total) : 0;
   }
 
-  scrollToSection(sectionId: string): void {
-    document.getElementById(sectionId)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-  }
-
-  onHeroPanelMove(event: MouseEvent): void {
-    const target = event.currentTarget as HTMLElement | null;
-    if (!target) {
-      return;
-    }
-
-    const rect = target.getBoundingClientRect();
-    const xRatio = (event.clientX - rect.left) / rect.width;
-    const yRatio = (event.clientY - rect.top) / rect.height;
-    this.heroTiltY = (xRatio - 0.5) * 8;
-    this.heroTiltX = (0.5 - yRatio) * 8;
-  }
-
-  onHeroPanelLeave(): void {
-    this.heroTiltX = 0;
-    this.heroTiltY = 0;
-  }
-
   private initScrollAnimations() {
     const observer = new IntersectionObserver(
-      (entries) => {
-        entries.forEach((entry) => {
-          if (entry.isIntersecting) {
-            entry.target.classList.add('visible');
-          }
-        });
-      },
-      { threshold: 0.1 }
+      entries => entries.forEach(e => { if (e.isIntersecting) e.target.classList.add('visible'); }),
+      { threshold: 0.08 }
     );
-
     setTimeout(() => {
-      this.scrollSections.forEach((section) => {
-        observer.observe(section.nativeElement);
-      });
+      this.scrollSections.forEach(s => observer.observe(s.nativeElement));
     }, 80);
   }
 }

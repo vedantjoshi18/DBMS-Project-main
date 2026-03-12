@@ -17,7 +17,7 @@ import * as THREE from 'three';
       width: 100%;
       height: 100%;
       z-index: -1;
-      background: linear-gradient(135deg, #0a0a0a 0%, #1a1a1a 50%, #0a0a0a 100%);
+      background: #080808;
       overflow: hidden;
     }
   `]
@@ -38,7 +38,7 @@ export class ParticleBackgroundComponent implements OnInit, AfterViewInit, OnDes
   private originalPositions!: Float32Array;
   private positions!: Float32Array;
   private velocities!: Float32Array;
-  private count = 3000;
+  private count = 1200;
 
   constructor(private ngZone: NgZone) { }
 
@@ -88,10 +88,15 @@ export class ParticleBackgroundComponent implements OnInit, AfterViewInit, OnDes
     this.velocities = new Float32Array(this.count * 3); // Not strictly used for physics loop below but good for extensions
 
     const colorPalette = [
-      new THREE.Color('#ffffff'), // White
-      new THREE.Color('#64ffda'), // Teal/Cyan (Cyberpunk)
-      new THREE.Color('#bd34fe'), // Neon Purple
-      new THREE.Color('#2979ff')  // Bright Blue
+      new THREE.Color('#f5f0eb'), // Warm white
+      new THREE.Color('#f5f0eb'), // Warm white (weighted)
+      new THREE.Color('#f5f0eb'), // Warm white (weighted)
+      new THREE.Color('#f5f0eb'), // Warm white (weighted)
+      new THREE.Color('#f5f0eb'), // Warm white (weighted)
+      new THREE.Color('#f5f0eb'), // Warm white (weighted)
+      new THREE.Color('#c8a96e'), // Muted gold
+      new THREE.Color('#c8a96e'), // Muted gold
+      new THREE.Color('#c8372d')  // Deep crimson
     ];
 
     for (let i = 0; i < this.count; i++) {
@@ -120,7 +125,7 @@ export class ParticleBackgroundComponent implements OnInit, AfterViewInit, OnDes
     // Material
     const sprite = this.getSprite();
     const material = new THREE.PointsMaterial({
-      size: 4,
+      size: 2.5,
       map: sprite,
       vertexColors: true,
       transparent: true,
@@ -237,7 +242,7 @@ export class ParticleBackgroundComponent implements OnInit, AfterViewInit, OnDes
 
       const distSq = (px - cx) ** 2 + (py - cy) ** 2 + (pz - cz) ** 2;
 
-      const repulsionRadius = 10000; // Squared radius (sqrt(10000) = 100)
+      const repulsionRadius = 3000; // Squared radius (sqrt(3000) ≈ 55)
 
       if (distSq < repulsionRadius) {
         // Repel

@@ -2,947 +2,652 @@ import { Component, HostListener, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule, Router } from '@angular/router';
 import { FormsModule } from '@angular/forms';
-import { MatToolbarModule } from '@angular/material/toolbar';
-import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
-import { MatFormFieldModule } from '@angular/material/form-field';
-import { MatInputModule } from '@angular/material/input';
 import { AuthService } from '../../services/auth.service';
 
 @Component({
   selector: 'app-navbar',
   standalone: true,
-  imports: [CommonModule, RouterModule, FormsModule, MatToolbarModule, MatButtonModule, MatIconModule, MatFormFieldModule, MatInputModule],
+  imports: [CommonModule, RouterModule, FormsModule, MatIconModule],
   template: `
+    <!-- Main Navbar Bar -->
     <nav class="navbar" [class.scrolled]="isScrolled" [class.nav-hidden]="!isNavVisible">
       <div class="nav-container">
         <a routerLink="/" class="logo">
-          <span class="logo-text">Event<span class="logo-accent">Hub</span></span>
+          <span class="logo-event">EVENT</span><span class="logo-hub">HUB</span>
         </a>
-        
-        <div class="nav-inner-pill">
-          <ul class="nav-links">
-            <li><a routerLink="/" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }" class="nav-link">Home</a></li>
-            <li><a routerLink="/clubs" routerLinkActive="active" class="nav-link">Clubs</a></li>
-            <li><a routerLink="/departments" routerLinkActive="active" class="nav-link">Departments</a></li>
-            <li><a routerLink="/events" routerLinkActive="active" class="nav-link">All Events</a></li>
-            <li><a (click)="handleProfileClick()" [class.active]="router.url === '/profile'" class="nav-link">Profile</a></li>
-          </ul>
+        <ul class="nav-links">
+          <li><a routerLink="/" routerLinkActive="active" [routerLinkActiveOptions]="{ exact:true }" class="nav-link">Home</a></li>
+          <li><a routerLink="/clubs" routerLinkActive="active" class="nav-link">Clubs</a></li>
+          <li><a routerLink="/departments" routerLinkActive="active" class="nav-link">Departments</a></li>
+          <li><a routerLink="/events" routerLinkActive="active" class="nav-link">Events</a></li>
+          <li><a (click)="handleProfileClick()" [class.active]="router.url === '/profile'" class="nav-link">Profile</a></li>
+        </ul>
+        <div class="nav-right">
+          <button class="btn-sign-in" *ngIf="!isLoggedIn" (click)="toggleLogin()">Sign In</button>
+          <button class="btn-sign-in" *ngIf="isLoggedIn" (click)="logout()">Log Out</button>
+          <button class="hamburger" (click)="toggleMobileMenu()" [class.open]="showMobileMenu" aria-label="Menu">
+            <span></span><span></span><span></span>
+          </button>
         </div>
-        
-
-        <button class="btn-pill-login" *ngIf="!isLoggedIn" (click)="toggleLogin()">Register</button>
-        <button class="btn-pill-login" *ngIf="isLoggedIn" (click)="logout()">Logout</button>
-        
-        <button class="mobile-menu-btn" (click)="toggleMobileMenu()">
-          <span></span>
-          <span></span>
-          <span></span>
-        </button>
       </div>
     </nav>
-    
-    <!-- Floating Admin Button -->
+
+    <!-- Admin FAB -->
     <button class="admin-floating-btn" *ngIf="isAdmin" routerLink="/admin" title="Admin Dashboard">
       <mat-icon>admin_panel_settings</mat-icon>
     </button>
-    
-    <!-- Mobile Menu Overlay -->
-    <div class="mobile-menu-overlay" *ngIf="showMobileMenu" (click)="toggleMobileMenu()">
-      <div class="mobile-menu glass-card" (click)="$event.stopPropagation()">
-        <button class="menu-close" (click)="toggleMobileMenu()">
-          <mat-icon>close</mat-icon>
-        </button>
-        
-        <div class="mobile-logo">
-          <span class="logo-text">Event<span class="logo-accent">Hub</span></span>
-        </div>
 
-        <ul class="mobile-nav-links">
-          <li><a routerLink="/" class="mobile-link">Home</a></li>
-          <li><a routerLink="/clubs" class="mobile-link">Clubs</a></li>
-          <li><a routerLink="/departments" class="mobile-link">Departments</a></li>
-          <li><a routerLink="/events" class="mobile-link">All Events</a></li>
-          <li><a (click)="handleProfileClick(); toggleMobileMenu()" class="mobile-link">Profile</a></li>
-        </ul>
-
-        <div class="mobile-actions">
-           <button class="btn btn-primary btn-full" *ngIf="!isLoggedIn" (click)="toggleLogin(); toggleMobileMenu()">
-             <mat-icon>login</mat-icon> Register / Login
-           </button>
-           
-           <button class="btn btn-outline btn-full" *ngIf="isAdmin" routerLink="/admin" (click)="toggleMobileMenu()">
-             <mat-icon>admin_panel_settings</mat-icon> Admin Dashboard
-           </button>
-           
-           <button class="btn btn-outline btn-full" *ngIf="isLoggedIn" (click)="logout(); toggleMobileMenu()">
-             <mat-icon>logout</mat-icon> Logout
-           </button>
-        </div>
-      </div>
-    </div>
-    
-    <!-- Unified Login/Signup Modal -->
-    <div class="login-modal" *ngIf="showLogin">
-      <div class="modal-content glass-card">
-        <button class="modal-close" (click)="toggleLogin()">
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <line x1="18" y1="6" x2="6" y2="18"/>
-            <line x1="6" y1="6" x2="18" y2="18"/>
+    <!-- Mobile Full-Screen Overlay -->
+    <div class="mobile-overlay" [class.open]="showMobileMenu" (click)="toggleMobileMenu()">
+      <div class="mobile-panel" (click)="$event.stopPropagation()">
+        <button class="mobile-close" (click)="toggleMobileMenu()">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+            <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
           </svg>
         </button>
-        
-        <!-- Toggle Tabs -->
-        <div class="auth-toggle">
-          <button class="toggle-btn" [class.active]="isLoginView" (click)="switchTab(true)">Login</button>
-          <button class="toggle-btn" [class.active]="!isLoginView" (click)="switchTab(false)">Sign Up</button>
+        <div class="mobile-logo">
+          <span class="logo-event">EVENT</span><span class="logo-hub">HUB</span>
         </div>
-
-        <h2 class="modal-title">{{ isLoginView ? 'Welcome Back' : 'Create Account' }}</h2>
-        <p class="modal-subtitle">{{ isLoginView ? 'Enter your credentials to continue' : 'Join us to explore amazing events' }}</p>
-        
-        <!-- Login Form -->
-        <form *ngIf="isLoginView" #loginForm="ngForm" (ngSubmit)="onLogin(loginForm)" class="registration-form">
-          <div class="form-group">
-            <label for="email">Email</label>
-            <input type="email" 
-                   id="email"
-                   name="email" 
-                   ngModel 
-                   required 
-                   placeholder="Enter your email"
-                   email>
-          </div>
-          
-          <div class="form-group">
-            <label for="password">Password</label>
-            <input type="password" 
-                   id="password"
-                   name="password" 
-                   ngModel 
-                   required 
-                   minlength="6"
-                   placeholder="Enter your password">
-          </div>
-          
-          <div class="captcha-container">
-            <div class="captcha-display">
-              <span class="captcha-text">{{captchaCode}}</span>
-              <button type="button" class="refresh-btn" (click)="generateCaptcha()">
-                <mat-icon>refresh</mat-icon>
-              </button>
-            </div>
-            
-            <div class="form-group">
-              <label for="captcha">Enter Captcha</label>
-              <input type="text" 
-                     id="captcha"
-                     name="captcha" 
-                     [(ngModel)]="captchaInput"
-                     required 
-                     placeholder="Enter code above">
-            </div>
-          </div>
-          
-          <div class="inline-error" *ngIf="loginError">{{ loginError }}</div>
-
-          <button type="submit" class="btn btn-primary btn-full" [disabled]="loginLoading">
-            <span class="btn-spinner" *ngIf="loginLoading"></span>
-            <mat-icon *ngIf="!loginLoading">login</mat-icon>
-            {{ loginLoading ? 'Logging in…' : 'Login' }}
-          </button>
-        </form>
-
-        <!-- Signup Form -->
-        <form *ngIf="!isLoginView" #signupForm="ngForm" (ngSubmit)="onRegister(signupForm)" class="registration-form">
-          <div class="form-group">
-            <label for="signup-name">Full Name</label>
-            <input type="text" 
-                   id="signup-name"
-                   name="name" 
-                   ngModel 
-                   required 
-                   placeholder="John Doe">
-          </div>
-
-          <div class="form-group">
-            <label for="signup-email">Email</label>
-            <input type="email" 
-                   id="signup-email"
-                   name="email" 
-                   ngModel 
-                   required 
-                   placeholder="john@example.com"
-                   email>
-          </div>
-
-          <div class="form-group">
-            <label for="signup-phone">Phone (Optional)</label>
-            <input type="tel" 
-                   id="signup-phone"
-                   name="phone" 
-                   ngModel 
-                   placeholder="9876543210">
-          </div>
-          
-          <div class="form-group">
-            <label for="signup-password">Password</label>
-            <input type="password" 
-                   id="signup-password"
-                   name="password" 
-                   ngModel 
-                   required 
-                   minlength="6"
-                   placeholder="Create a password">
-          </div>
-          
-          <div class="captcha-container">
-            <div class="captcha-display">
-              <span class="captcha-text">{{captchaCode}}</span>
-              <button type="button" class="refresh-btn" (click)="generateCaptcha()">
-                <mat-icon>refresh</mat-icon>
-              </button>
-            </div>
-            
-            <div class="form-group">
-              <label for="signup-captcha">Enter Captcha</label>
-              <input type="text" 
-                     id="signup-captcha"
-                     name="captcha" 
-                     [(ngModel)]="captchaInput"
-                     required 
-                     placeholder="Enter code above">
-            </div>
-          </div>
-          
-          <div class="inline-error" *ngIf="registerError">{{ registerError }}</div>
-          <div class="inline-success" *ngIf="registerSuccess">{{ registerSuccess }}</div>
-
-          <button type="submit" class="btn btn-primary btn-full" [disabled]="registerLoading">
-            <span class="btn-spinner" *ngIf="registerLoading"></span>
-            <mat-icon *ngIf="!registerLoading">person_add</mat-icon>
-            {{ registerLoading ? 'Creating account…' : 'Create Account' }}
-          </button>
-        </form>
+        <nav class="mobile-nav">
+          <a routerLink="/" class="mobile-link" (click)="toggleMobileMenu()">Home</a>
+          <a routerLink="/clubs" class="mobile-link" (click)="toggleMobileMenu()">Clubs</a>
+          <a routerLink="/departments" class="mobile-link" (click)="toggleMobileMenu()">Departments</a>
+          <a routerLink="/events" class="mobile-link" (click)="toggleMobileMenu()">Events</a>
+          <a (click)="handleProfileClick(); toggleMobileMenu()" class="mobile-link">Profile</a>
+        </nav>
+        <div class="mobile-footer">
+          <button class="btn-filled" *ngIf="!isLoggedIn" (click)="toggleLogin(); toggleMobileMenu()">Sign In</button>
+          <button class="btn-ghost" *ngIf="isLoggedIn" (click)="logout(); toggleMobileMenu()">Log Out</button>
+          <a *ngIf="isAdmin" routerLink="/admin" class="btn-ghost" (click)="toggleMobileMenu()">Admin</a>
+        </div>
       </div>
     </div>
-    
-    <!-- Backdrop -->
-    <div class="modal-backdrop" *ngIf="showLogin" (click)="toggleLogin()"></div>
+
+    <!-- Auth Modal — two-panel full-screen -->
+    <div class="auth-modal" *ngIf="showLogin" (click)="toggleLogin()">
+      <div class="auth-shell" (click)="$event.stopPropagation()">
+
+        <div class="auth-brand">
+          <div class="brand-inner">
+            <div class="brand-logo">
+              <span class="logo-event">EVENT</span><span class="logo-hub">HUB</span>
+            </div>
+            <p class="brand-tagline">Where campus<br>life comes together.</p>
+            <span class="brand-note">College Event Platform · Est. 2024</span>
+          </div>
+        </div>
+
+        <div class="auth-form-panel">
+          <button class="auth-close" (click)="toggleLogin()">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+              <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+            </svg>
+          </button>
+
+          <div class="auth-tabs">
+            <button class="auth-tab" [class.active]="isLoginView" (click)="switchTab(true)">Login</button>
+            <button class="auth-tab" [class.active]="!isLoginView" (click)="switchTab(false)">Sign Up</button>
+          </div>
+
+          <h2 class="auth-heading">{{ isLoginView ? 'Welcome back' : 'Create account' }}</h2>
+          <p class="auth-sub">{{ isLoginView ? 'Enter your credentials to continue.' : 'Join to explore campus events.' }}</p>
+
+          <!-- Login Form -->
+          <form *ngIf="isLoginView" #loginForm="ngForm" (ngSubmit)="onLogin(loginForm)" class="auth-form">
+            <div class="field-wrap">
+              <input type="email" name="email" ngModel required placeholder=" " id="lf-email" autocomplete="email">
+              <label for="lf-email">Email</label>
+            </div>
+            <div class="field-wrap">
+              <input type="password" name="password" ngModel required minlength="6" placeholder=" " id="lf-pw" autocomplete="current-password">
+              <label for="lf-pw">Password</label>
+            </div>
+            <div class="captcha-row">
+              <div class="captcha-box">
+                <span class="captcha-code">{{captchaCode}}</span>
+                <button type="button" class="captcha-refresh" (click)="generateCaptcha()">↻</button>
+              </div>
+              <div class="field-wrap">
+                <input type="text" name="captcha" [(ngModel)]="captchaInput" required placeholder=" " id="lf-cap">
+                <label for="lf-cap">Enter code</label>
+              </div>
+            </div>
+            <div class="inline-error" *ngIf="loginError">{{ loginError }}</div>
+            <button type="submit" class="btn-filled btn-full-auth" [disabled]="loginLoading">
+              <span class="btn-spinner" *ngIf="loginLoading"></span>
+              {{ loginLoading ? 'Logging in…' : 'Login' }}
+            </button>
+          </form>
+
+          <!-- Signup Form -->
+          <form *ngIf="!isLoginView" #signupForm="ngForm" (ngSubmit)="onRegister(signupForm)" class="auth-form">
+            <div class="field-wrap">
+              <input type="text" name="name" ngModel required placeholder=" " id="sf-name" autocomplete="name">
+              <label for="sf-name">Full Name</label>
+            </div>
+            <div class="field-wrap">
+              <input type="email" name="email" ngModel required placeholder=" " id="sf-email" autocomplete="email">
+              <label for="sf-email">Email</label>
+            </div>
+            <div class="field-wrap">
+              <input type="tel" name="phone" ngModel placeholder=" " id="sf-phone">
+              <label for="sf-phone">Phone (optional)</label>
+            </div>
+            <div class="field-wrap">
+              <input type="password" name="password" ngModel required minlength="6" placeholder=" " id="sf-pw" autocomplete="new-password">
+              <label for="sf-pw">Password</label>
+            </div>
+            <div class="captcha-row">
+              <div class="captcha-box">
+                <span class="captcha-code">{{captchaCode}}</span>
+                <button type="button" class="captcha-refresh" (click)="generateCaptcha()">↻</button>
+              </div>
+              <div class="field-wrap">
+                <input type="text" name="captcha" [(ngModel)]="captchaInput" required placeholder=" " id="sf-cap">
+                <label for="sf-cap">Enter code</label>
+              </div>
+            </div>
+            <div class="inline-error" *ngIf="registerError">{{ registerError }}</div>
+            <div class="inline-success" *ngIf="registerSuccess">{{ registerSuccess }}</div>
+            <button type="submit" class="btn-filled btn-full-auth" [disabled]="registerLoading">
+              <span class="btn-spinner" *ngIf="registerLoading"></span>
+              {{ registerLoading ? 'Creating account…' : 'Create Account' }}
+            </button>
+          </form>
+
+        </div>
+      </div>
+    </div>
   `,
   styles: [`
-    /* Navbar */
+    /* ── NAVBAR ─────────────────────────────── */
     .navbar {
       position: fixed;
-      top: 20px;
-      left: 50%;
-      transform: translateX(-50%);
+      top: 0; left: 0; right: 0;
       z-index: 1000;
-      border-radius: 50px;
-      background: transparent;
-      border: 1px solid transparent;
+      padding: 22px 0;
+      background-color: transparent;
+      border-bottom: 1px solid transparent;
+      backdrop-filter: blur(0px);
+      -webkit-backdrop-filter: blur(0px);
       box-shadow: none;
-      transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+      transition: background-color 0.45s ease, border-color 0.45s ease,
+                  padding 0.35s ease, backdrop-filter 0.45s ease,
+                  -webkit-backdrop-filter 0.45s ease, box-shadow 0.45s ease,
+                  transform 0.35s cubic-bezier(0.16,1,0.3,1);
     }
-    
     .navbar.scrolled {
-      top: 12px;
-      background: rgba(18, 18, 24, 0.92);
-      backdrop-filter: blur(20px);
-      -webkit-backdrop-filter: blur(20px);
-      border: 1px solid rgba(255, 255, 255, 0.1);
-      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+      background-color: rgba(8,8,8,.92);
+      backdrop-filter: blur(18px);
+      -webkit-backdrop-filter: blur(18px);
+      border-bottom: 1px solid rgba(245,240,235,.07);
+      box-shadow: 0 1px 40px rgba(0,0,0,.45);
+      padding: 14px 0;
     }
-    
-    .navbar.nav-hidden {
-      transform: translateX(-50%) translateY(-150%);
-      opacity: 0;
-      pointer-events: none;
-    }
-    
+    .navbar.nav-hidden { transform: translateY(-110%); }
+
     .nav-container {
+      max-width: 1300px;
+      margin: 0 auto;
+      padding: 0 32px;
       display: flex;
       align-items: center;
-      justify-content: center;
-      gap: 40px;
-      padding: 12px 20px;
-      transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
-    }
-    
-    .navbar.scrolled .nav-container {
-      padding: 10px 20px;
-      gap: 32px;
+      justify-content: space-between;
     }
 
-    /* Mobile Menu Styles */
-    .mobile-menu-overlay {
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100vh;
-      background: rgba(0, 0, 0, 0.6);
-      backdrop-filter: blur(5px);
-      z-index: 2100;
-      opacity: 0;
-      animation: fadeIn 0.3s forwards;
-      display: flex;
-      justify-content: flex-end;
-    }
-
-    .mobile-menu {
-      width: 80%;
-      max-width: 300px;
-      height: 100%;
-      background: rgba(20, 20, 30, 0.95);
-      backdrop-filter: blur(20px);
-      border-left: 1px solid rgba(255, 255, 255, 0.1);
-      padding: 30px;
-      display: flex;
-      flex-direction: column;
-      transform: translateX(100%);
-      animation: slideIn 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-      box-shadow: -10px 0 30px rgba(0,0,0,0.5);
-    }
-
-    @keyframes slideIn {
-      to { transform: translateX(0); }
-    }
-
-    .menu-close {
-      align-self: flex-end;
-      background: none;
-      border: none;
-      color: white;
-      cursor: pointer;
-      padding: 8px;
-    }
-
-    .mobile-logo {
-      margin-bottom: 40px;
-      text-align: center;
-    }
-
-    .mobile-nav-links {
-      list-style: none;
-      padding: 0;
-      margin: 0 0 40px 0;
-      display: flex;
-      flex-direction: column;
-      gap: 20px;
-    }
-
-    .mobile-link {
-      font-size: 1.2rem;
-      color: rgba(255, 255, 255, 0.8);
-      text-decoration: none;
-      font-weight: 500;
-      display: block;
-      transition: color 0.3s;
-    }
-
-    .mobile-link:hover {
-      color: #dc2626;
-      transform: translateX(8px);
-    }
-
-    .mobile-actions {
-      margin-top: auto;
-      display: flex;
-      flex-direction: column;
-      gap: 15px;
-    }
-
-    /* Responsive Adjustments */
-    @media (max-width: 768px) {
-      .navbar {
-        width: 90%;
-        top: 15px;
-      }
-      
-      .nav-container {
-         justify-content: space-between;
-         gap: 0;
-         padding: 10px 15px;
-         width: 100%;
-      }
-
-      .logo-text {
-        font-size: 1.2rem;
-      }
-      
-      .nav-inner-pill {
-        display: none; /* Hide main links on mobile */
-      }
-      
-      .btn-pill-login {
-        display: none; /* Hide login button on mobile header */
-      }
-
-      .mobile-menu-btn {
-        display: flex;
-        padding: 0;
-      }
-    }
-    
     /* Logo */
-    .logo {
-      text-decoration: none;
+    .logo { text-decoration: none; display: flex; align-items: baseline; gap: 0; }
+    .logo-event {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 1.5rem;
+      letter-spacing: 0.04em;
+      color: #f5f0eb;
     }
-    
-    .logo-text {
-      font-family: 'Outfit', sans-serif;
-      font-weight: 700;
-      font-size: 1.4rem;
-      color: white;
-      letter-spacing: 0.02em;
-      text-transform: uppercase;
-      transition: all 0.3s ease;
+    .logo-hub {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 1.5rem;
+      letter-spacing: 0.04em;
+      color: #c8372d;
     }
-    
-    .logo:hover .logo-text {
-      text-shadow: 0 0 20px rgba(220, 38, 38, 0.5);
-    }
-    
-    .logo-accent {
-      background: linear-gradient(135deg, #dc2626 0%, #ef4444 100%);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-      background-clip: text;
-    }
-    
-    /* Inner Pill - Nested container for nav links */
-    .nav-inner-pill {
-      display: flex;
-      align-items: center;
-      background: rgba(40, 40, 50, 0.6);
-      backdrop-filter: blur(10px);
-      -webkit-backdrop-filter: blur(10px);
-      border: 1px solid rgba(255, 255, 255, 0.1);
-      border-radius: 50px;
-      padding: 8px 24px;
-      transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
-    }
-    
-    .navbar.scrolled .nav-inner-pill {
-      background: rgba(50, 50, 60, 0.5);
-      border-color: rgba(255, 255, 255, 0.08);
-    }
-    
-    /* Nav Links */
+
+    /* Nav links */
     .nav-links {
       display: flex;
       list-style: none;
-      gap: 28px;
-      margin: 0;
-      padding: 0;
+      gap: 36px;
+      margin: 0; padding: 0;
     }
-    
     .nav-link {
       text-decoration: none;
-      color: rgba(255, 255, 255, 0.7);
+      font-family: 'DM Sans', sans-serif;
+      font-size: 0.78rem;
       font-weight: 500;
-      font-size: 0.85rem;
-      transition: all 0.3s ease;
+      letter-spacing: 0.13em;
+      text-transform: uppercase;
+      color: rgba(245,240,235,.55);
       cursor: pointer;
+      transition: color 0.2s ease;
       position: relative;
-      padding: 6px 0;
-      white-space: nowrap;
+      padding-top: 16px;
     }
-    
-    .nav-link:hover,
-    .nav-link.active {
-      color: white;
+    .nav-link::before {
+      content: '·';
+      position: absolute;
+      top: 0; left: 50%;
+      transform: translateX(-50%);
+      font-size: 1.2rem;
+      line-height: 1;
+      color: #c8372d;
+      opacity: 0;
+      transition: opacity 0.2s ease;
     }
-    
-    /* Login Button inside Pill */
-    .btn-pill-login {
-      padding: 8px 20px;
-      background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%);
-      border: none;
-      border-radius: 50px;
-      color: white;
+    .nav-link:hover, .nav-link.active { color: #f5f0eb; }
+    .nav-link.active::before { opacity: 1; }
+
+    /* Right side */
+    .nav-right { display: flex; align-items: center; gap: 16px; }
+    .btn-sign-in {
+      font-family: 'DM Sans', sans-serif;
+      font-size: 0.78rem;
       font-weight: 600;
-      font-size: 0.85rem;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      background: transparent;
+      color: rgba(245,240,235,.7);
+      border: 1px solid rgba(245,240,235,.25);
+      border-radius: 999px;
+      padding: 8px 22px;
       cursor: pointer;
-      transition: all 0.3s ease;
-      font-family: inherit;
-      white-space: nowrap;
+      transition: border-color 0.2s ease, color 0.2s ease;
     }
-    
-    .btn-pill-login:hover {
-      transform: scale(1.05);
-      box-shadow: 0 4px 16px rgba(220, 38, 38, 0.4);
-    }
-    
-    /* Nav Actions */
-    .nav-actions {
-      display: flex;
-      gap: 12px;
-    }
-    
-    .btn-gradient {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      padding: 12px 24px;
-      background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%);
-      border: none;
-      border-radius: 50px;
-      color: white;
-      font-weight: 600;
-      font-size: 0.9rem;
-      cursor: pointer;
-      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-      box-shadow: 0 4px 20px rgba(220, 38, 38, 0.3);
-      font-family: inherit;
-    }
-    
-    .btn-gradient:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 8px 30px rgba(220, 38, 38, 0.4);
-    }
-    
-    .btn-gradient mat-icon {
-      font-size: 18px;
-      width: 18px;
-      height: 18px;
-    }
-    
-    /* Mobile Menu Button */
-    .mobile-menu-btn {
+    .btn-sign-in:hover { border-color: rgba(245,240,235,.7); color: #f5f0eb; }
+
+    /* Hamburger */
+    .hamburger {
       display: none;
       flex-direction: column;
       gap: 5px;
       background: none;
       border: none;
       cursor: pointer;
-      padding: 8px;
-    }
-    
-    .mobile-menu-btn span {
-      width: 24px;
-      height: 2px;
-      background: white;
-      transition: all 0.3s ease;
-    }
-    
-    /* Login Modal */
-    .modal-backdrop {
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100vw;
-      height: 100vh;
-      background: rgba(0, 0, 0, 0.7);
-      backdrop-filter: blur(5px);
-      z-index: 2000; /* Increased to cover navbar */
-      animation: fadeIn 0.3s ease-out;
-    }
-
-    @keyframes fadeIn {
-      from { opacity: 0; }
-      to { opacity: 1; }
-    }
-
-    @keyframes modalFadeIn {
-      from { opacity: 0; }
-      to { opacity: 1; }
-    }
-    
-    .login-modal {
-      position: fixed;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%);
-      z-index: 2001;
-      width: 90%;
-      max-width: 420px;
-      transition: max-width 0.4s cubic-bezier(0.25, 0.8, 0.25, 1);
-    }
-
-    .login-modal.wide-modal {
-      max-width: 750px !important;
-    }
-    
-    .modal-content {
-      padding: 40px;
-      overflow-y: auto;
-      max-height: 90vh;
-      border-radius: 24px;
-      animation: contentFadeIn 0.4s cubic-bezier(0.16, 1, 0.3, 1);
-      scrollbar-width: none;
-    }
-
-    .modal-content::-webkit-scrollbar {
-      display: none;
-    }
-
-    @keyframes contentFadeIn {
-      from { opacity: 0; transform: scale(0.95); }
-      to { opacity: 1; transform: scale(1); }
-    }
-    
-    .modal-close {
-      position: absolute;
-      top: 16px;
-      right: 16px;
-      background: none;
-      border: none;
-      color: rgba(255, 255, 255, 0.7);
-      cursor: pointer;
-      padding: 8px;
-      transition: all 0.3s ease;
-      z-index: 10;
-    }
-    
-    .modal-close:hover {
-      color: white;
-      transform: rotate(90deg);
-    }
-    
-    .modal-title {
-      font-family: 'Outfit', sans-serif;
-      font-size: 1.5rem;
-      font-weight: 700;
-      text-align: center;
-      margin-bottom: 8px;
-    }
-    
-    .modal-subtitle {
-      text-align: center;
-      color: rgba(255, 255, 255, 0.7);
-      margin-bottom: 30px;
-      font-size: 0.95rem;
-    }
-
-    /* Auth Toggle */
-    .auth-toggle {
-      display: flex;
-      justify-content: center;
-      gap: 4px;
-      margin-bottom: 28px;
-      background: rgba(255, 255, 255, 0.06);
       padding: 6px;
-      border-radius: 50px;
-      width: fit-content;
-      margin-left: auto;
-      margin-right: auto;
-      border: 1px solid rgba(255, 255, 255, 0.08);
     }
+    .hamburger span {
+      display: block;
+      width: 22px;
+      height: 1.5px;
+      background: #f5f0eb;
+      transition: all 0.3s ease;
+      transform-origin: center;
+    }
+    .hamburger.open span:nth-child(1) { transform: rotate(45deg) translate(4px, 4px); }
+    .hamburger.open span:nth-child(2) { opacity: 0; }
+    .hamburger.open span:nth-child(3) { transform: rotate(-45deg) translate(4px, -4px); }
 
-    .toggle-btn {
+    /* ── MOBILE OVERLAY ─────────────────────── */
+    .mobile-overlay {
+      position: fixed;
+      inset: 0;
+      z-index: 1200;
+      background: rgba(0,0,0,.5);
+      backdrop-filter: blur(4px);
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.35s ease;
+    }
+    .mobile-overlay.open { opacity: 1; pointer-events: all; }
+
+    .mobile-panel {
+      position: absolute;
+      top: 0; right: 0;
+      width: min(380px, 85vw);
+      height: 100%;
+      background: #0f0f0f;
+      border-left: 1px solid rgba(245,240,235,.06);
+      display: flex;
+      flex-direction: column;
+      padding: 32px 28px;
+      transform: translateX(100%);
+      transition: transform 0.45s cubic-bezier(0.16,1,0.3,1);
+    }
+    .mobile-overlay.open .mobile-panel { transform: translateX(0); }
+
+    .mobile-close {
+      align-self: flex-end;
       background: none;
       border: none;
-      color: rgba(255, 255, 255, 0.6);
-      padding: 10px 28px;
-      border-radius: 50px;
-      font-weight: 600;
-      font-size: 0.9rem;
+      color: rgba(245,240,235,.5);
       cursor: pointer;
-      transition: all 0.3s ease;
-      letter-spacing: 0.02em;
+      padding: 4px;
+      margin-bottom: 32px;
+      transition: color 0.2s;
     }
+    .mobile-close:hover { color: #f5f0eb; }
 
-    .toggle-btn.active {
-      background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%);
-      color: white;
-      box-shadow: 0 2px 10px rgba(220, 38, 38, 0.3);
-    }
-    
-    .registration-form {
+    .mobile-logo { margin-bottom: 48px; }
+
+    .mobile-nav {
       display: flex;
       flex-direction: column;
-      gap: 20px;
-    }
-
-    form.signup-form.registration-form {
-      display: flex;
-      flex-direction: column;
-      gap: 20px;
-    }
-
-    .signup-grid {
-      display: grid !important;
-      grid-template-columns: 1fr 1fr !important;
-      column-gap: 24px;
-      row-gap: 20px;
-      align-items: start;
-    }
-
-    .signup-form .btn-full {
-      margin-top: 8px;
-    }
-
-    /* Captcha row: display on left, input on right, vertically aligned */
-    .captcha-cell {
-      display: flex;
-      flex-direction: column;
-      justify-content: flex-end;
-      gap: 8px;
-    }
-
-    .captcha-cell .captcha-display {
-      margin-bottom: 0;
-      height: auto;
-      min-height: 52px;
-    }
-
-    /* Responsive Grid for Modal */
-    @media (max-width: 600px) {
-      .login-modal.wide-modal {
-        max-width: 95% !important;
-      }
-      
-      .signup-grid {
-        grid-template-columns: 1fr !important;
-        gap: 16px;
-      }
-
-      .captcha-cell label {
-        display: none;
-      }
-    }
-
-    @media (max-width: 480px) {
-      .modal-content {
-        padding: 30px 20px;
-      }
-      
-      .modal-title {
-        font-size: 1.3rem;
-      }
-      
-      .auth-toggle {
-        gap: 8px;
-      }
-      
-      .toggle-btn {
-        padding: 8px 16px;
-        font-size: 0.85rem;
-      }
-    }
-    
-    .form-group {
-      display: flex;
-      flex-direction: column;
-      gap: 8px;
-    }
-    
-    .form-group label {
-      font-size: 0.9rem;
-      font-weight: 500;
-      color: rgba(255, 255, 255, 0.8);
-      margin-left: 4px; /* Slight alignment offset */
-      margin-bottom: 2px;
-    }
-    
-    .form-group input {
-      padding: 14px 18px;
-      background: rgba(255, 255, 255, 0.04);
-      border: 1px solid rgba(255, 255, 255, 0.08);
-      border-radius: 14px;
-      color: white;
-      font-size: 1rem;
-      transition: all 0.2s ease;
-    }
-    
-    .form-group input:focus {
-      outline: none;
-      background: rgba(255, 255, 255, 0.08);
-      border-color: rgba(255, 75, 43, 0.5);
-      box-shadow: 0 0 0 4px rgba(255, 75, 43, 0.1);
-    }
-    
-    .form-group input::placeholder {
-      color: rgba(255, 255, 255, 0.45);
-      font-weight: 400;
-    }
-    
-    /* Captcha */
-    .captcha-container {
-      margin: 8px 0;
-    }
-    
-    .captcha-display {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      background: rgba(102, 126, 234, 0.1);
-      border: 1px solid rgba(102, 126, 234, 0.3);
-      border-radius: 12px;
-      padding: 14px 20px;
-      margin-bottom: 16px;
-    }
-    
-    .captcha-text {
-      font-family: 'Courier New', monospace;
-      font-size: 1.6rem;
-      font-weight: 700;
-      color: white;
-      letter-spacing: 6px;
+      gap: 6px;
       flex: 1;
-      user-select: none;
-      text-decoration: line-through;
-      text-decoration-color: rgba(102, 126, 234, 0.3);
     }
-    
-    .refresh-btn {
-      background: none;
-      border: none;
-      color: #dc2626;
+    .mobile-link {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 2.8rem;
+      letter-spacing: 0.04em;
+      color: rgba(245,240,235,.35);
+      text-decoration: none;
       cursor: pointer;
-      padding: 8px;
-      transition: all 0.3s ease;
+      line-height: 1.1;
+      transition: color 0.2s ease;
+    }
+    .mobile-link:hover { color: #f5f0eb; }
+
+    .mobile-footer {
       display: flex;
-      align-items: center;
-      justify-content: center;
+      flex-direction: column;
+      gap: 10px;
+      padding-top: 32px;
+      border-top: 1px solid rgba(245,240,235,.06);
     }
-    
-    .refresh-btn:hover {
-      transform: rotate(180deg);
-    }
-
-    /* Inline auth feedback */
-    .inline-error {
-      padding: 10px 14px;
-      background: rgba(220, 38, 38, 0.12);
-      border: 1px solid rgba(220, 38, 38, 0.35);
-      border-radius: 10px;
-      color: #fca5a5;
-      font-size: 0.88rem;
-      line-height: 1.4;
-      margin-bottom: -4px;
-      animation: slideDown 0.2s ease-out;
-    }
-
-    .inline-success {
-      padding: 10px 14px;
-      background: rgba(34, 197, 94, 0.12);
-      border: 1px solid rgba(34, 197, 94, 0.35);
-      border-radius: 10px;
-      color: #86efac;
-      font-size: 0.88rem;
-      line-height: 1.4;
-      margin-bottom: -4px;
-      animation: slideDown 0.2s ease-out;
-    }
-
-    @keyframes slideDown {
-      from { opacity: 0; transform: translateY(-6px); }
-      to   { opacity: 1; transform: translateY(0); }
-    }
-
-    /* Button loading spinner */
-    .btn-spinner {
-      display: inline-block;
-      width: 16px;
-      height: 16px;
-      border: 2px solid rgba(255, 255, 255, 0.3);
-      border-top-color: white;
-      border-radius: 50%;
-      animation: btn-spin 0.65s linear infinite;
-      flex-shrink: 0;
-    }
-
-    @keyframes btn-spin {
-      to { transform: rotate(360deg); }
-    }
-    
-    /* Buttons */
-    .btn {
+    .btn-filled {
+      background: #c8372d;
+      color: #fff;
+      padding: 13px 28px;
+      border-radius: 999px;
+      font-family: 'DM Sans', sans-serif;
+      font-size: 0.82rem;
+      font-weight: 600;
+      letter-spacing: 0.07em;
+      text-transform: uppercase;
+      border: none;
+      cursor: pointer;
+      text-decoration: none;
       display: inline-flex;
       align-items: center;
       justify-content: center;
       gap: 8px;
-      padding: 12px 24px;
-      border-radius: 12px;
-      font-weight: 600;
-      font-size: 0.95rem;
-      text-decoration: none;
-      cursor: pointer;
-      border: none;
-      transition: all 0.3s ease;
+      transition: background 0.15s, transform 0.15s;
     }
-    
-    .btn-primary {
-      background: linear-gradient(135deg, #FF4B2B 0%, #FF416C 100%);
-      color: white;
-      box-shadow: 0 4px 15px rgba(255, 65, 108, 0.3);
-      border: 1px solid rgba(255, 255, 255, 0.1);
-      letter-spacing: 0.02em;
-    }
-    
-    .btn-primary:hover:not(:disabled) {
-      transform: translateY(-2px);
-      box-shadow: 0 8px 25px rgba(255, 65, 108, 0.4);
-      filter: brightness(1.1);
-    }
-    
-    .btn-primary:disabled {
-      opacity: 0.5;
-      cursor: not-allowed;
-    }
-    
-    .btn-outline {
+    .btn-filled:hover { background: #e8572d; transform: translateY(-1px); }
+    .btn-ghost {
       background: transparent;
-      color: white;
-      border: 1px solid rgba(255, 255, 255, 0.1);
+      color: #f5f0eb;
+      padding: 12px 28px;
+      border: 1px solid rgba(245,240,235,.22);
+      border-radius: 999px;
+      font-family: 'DM Sans', sans-serif;
+      font-size: 0.82rem;
+      font-weight: 600;
+      letter-spacing: 0.07em;
+      text-transform: uppercase;
+      cursor: pointer;
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      transition: border-color 0.15s;
     }
-    
-    .btn-outline:hover {
-      background: rgba(255, 255, 255, 0.05);
-      border-color: #dc2626;
-    }
-    
-    .btn-full {
-      width: 100%;
-    }
-    
-    /* Responsive */
-    @media (max-width: 768px) {
-      .nav-links {
-        display: none;
-      }
-      
-      .mobile-menu-btn {
-        display: flex;
-      }
-      
-      .nav-actions {
-        display: none;
-      }
-    }
+    .btn-ghost:hover { border-color: #f5f0eb; }
 
-    /* Floating Admin Button */
-    .admin-floating-btn {
+    /* ── AUTH MODAL ─────────────────────────── */
+    .auth-modal {
       position: fixed;
-      bottom: 30px;
-      right: 30px;
-      width: 60px;
-      height: 60px;
-      border-radius: 50%;
-      background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
-      color: white;
-      border: none;
-      box-shadow: 0 4px 20px rgba(59, 130, 246, 0.4);
+      inset: 0;
+      z-index: 2000;
       display: flex;
       align-items: center;
       justify-content: center;
+      background: rgba(0,0,0,.92);
+      backdrop-filter: blur(8px);
+      animation: fadeIn 0.3s ease;
+    }
+    @keyframes fadeIn { from { opacity:0; } to { opacity:1; } }
+
+    .auth-shell {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      width: min(900px, 94vw);
+      max-height: 90vh;
+      border-radius: 20px;
+      overflow: hidden;
+      animation: scaleIn 0.4s cubic-bezier(0.16,1,0.3,1);
+    }
+    @keyframes scaleIn { from { transform: scale(0.94); opacity:0; } to { transform: scale(1); opacity:1; } }
+
+    .auth-brand {
+      background: #0f0f0f;
+      border-right: 1px solid rgba(245,240,235,.06);
+      display: flex;
+      align-items: flex-end;
+      padding: 48px;
+    }
+    .brand-inner { display: flex; flex-direction: column; gap: 20px; }
+    .brand-logo { display: flex; align-items: baseline; }
+    .brand-tagline {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 2.2rem;
+      font-weight: 300;
+      line-height: 1.15;
+      color: #f5f0eb;
+    }
+    .brand-note {
+      font-family: 'DM Sans', sans-serif;
+      font-size: 0.68rem;
+      letter-spacing: 0.16em;
+      text-transform: uppercase;
+      color: rgba(245,240,235,.3);
+    }
+
+    .auth-form-panel {
+      background: #181818;
+      padding: 40px 40px 40px;
+      overflow-y: auto;
+      position: relative;
+      display: flex;
+      flex-direction: column;
+    }
+    .auth-form-panel::-webkit-scrollbar { width: 4px; }
+    .auth-form-panel::-webkit-scrollbar-thumb { background: rgba(245,240,235,.1); border-radius: 2px; }
+
+    .auth-close {
+      align-self: flex-end;
+      background: none;
+      border: none;
+      color: rgba(245,240,235,.35);
       cursor: pointer;
-      z-index: 2000;
-      transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+      padding: 4px;
+      margin-bottom: 24px;
+      transition: color 0.2s;
+    }
+    .auth-close:hover { color: #f5f0eb; }
+
+    /* Tab nav — underline style */
+    .auth-tabs {
+      display: flex;
+      gap: 28px;
+      margin-bottom: 28px;
+      border-bottom: 1px solid rgba(245,240,235,.08);
+      padding-bottom: 0;
+    }
+    .auth-tab {
+      background: none;
+      border: none;
+      color: rgba(245,240,235,.35);
+      font-family: 'DM Sans', sans-serif;
+      font-size: 0.82rem;
+      font-weight: 600;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      cursor: pointer;
+      padding: 0 0 12px;
+      position: relative;
+      transition: color 0.2s;
+    }
+    .auth-tab::after {
+      content: '';
+      position: absolute;
+      bottom: -1px; left: 0; right: 0;
+      height: 2px;
+      background: #c8372d;
+      transform: scaleX(0);
+      transition: transform 0.25s ease;
+    }
+    .auth-tab.active { color: #f5f0eb; }
+    .auth-tab.active::after { transform: scaleX(1); }
+
+    .auth-heading {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 2rem;
+      letter-spacing: 0.04em;
+      color: #f5f0eb;
+      margin-bottom: 6px;
+    }
+    .auth-sub {
+      font-family: 'DM Sans', sans-serif;
+      font-size: 0.82rem;
+      color: rgba(245,240,235,.4);
+      margin-bottom: 24px;
     }
 
-    .admin-floating-btn:hover {
-      transform: scale(1.1) rotate(5deg);
-      box-shadow: 0 8px 25px rgba(59, 130, 246, 0.6);
+    .auth-form {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
     }
 
-    .admin-floating-btn mat-icon {
-      font-size: 28px;
-      width: 28px;
-      height: 28px;
+    /* Floating label fields */
+    .field-wrap {
+      position: relative;
+    }
+    .field-wrap input {
+      width: 100%;
+      background: transparent;
+      border: none;
+      border-bottom: 1px solid rgba(245,240,235,.15);
+      padding: 20px 0 10px;
+      color: #f5f0eb;
+      font-family: 'DM Sans', sans-serif;
+      font-size: 0.95rem;
+      transition: border-color 0.2s;
+      outline: none;
+    }
+    .field-wrap input:focus { border-bottom-color: rgba(245,240,235,.5); }
+    .field-wrap input:focus + label,
+    .field-wrap input:not(:placeholder-shown) + label {
+      transform: translateY(-22px);
+      font-size: 0.67rem;
+      color: rgba(245,240,235,.4);
+      letter-spacing: 0.12em;
+    }
+    .field-wrap label {
+      position: absolute;
+      left: 0;
+      top: 18px;
+      font-family: 'DM Sans', sans-serif;
+      font-size: 0.85rem;
+      color: rgba(245,240,235,.3);
+      pointer-events: none;
+      transition: transform 0.2s ease, font-size 0.2s ease, color 0.2s ease, letter-spacing 0.2s ease;
+    }
+
+    /* Captcha */
+    .captcha-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+      align-items: end;
+    }
+    .captcha-box {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      border: 1px solid rgba(245,240,235,.1);
+      border-radius: 6px;
+      padding: 12px 14px;
+      background: rgba(245,240,235,.03);
+    }
+    .captcha-code {
+      font-family: 'Courier New', monospace;
+      font-size: 1.1rem;
+      font-weight: 700;
+      letter-spacing: 6px;
+      color: #f5f0eb;
+      user-select: none;
+      text-decoration: line-through;
+      text-decoration-color: rgba(200,55,45,.4);
+      flex: 1;
+    }
+    .captcha-refresh {
+      background: none;
+      border: none;
+      color: rgba(245,240,235,.4);
+      font-size: 1.1rem;
+      cursor: pointer;
+      padding: 2px;
+      transition: color 0.2s, transform 0.3s;
+    }
+    .captcha-refresh:hover { color: #f5f0eb; transform: rotate(180deg); }
+
+    /* Submit */
+    .btn-full-auth {
+      width: 100%;
+      justify-content: center;
+      margin-top: 4px;
+    }
+    .btn-spinner {
+      display: inline-block;
+      width: 14px; height: 14px;
+      border: 2px solid rgba(255,255,255,.3);
+      border-top-color: #fff;
+      border-radius: 50%;
+      animation: spin 0.6s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    .inline-error {
+      font-family: 'DM Sans', sans-serif;
+      font-size: 0.8rem;
+      color: #ff8080;
+    }
+    .inline-success {
+      font-family: 'DM Sans', sans-serif;
+      font-size: 0.8rem;
+      color: #7ecb7e;
+    }
+
+    /* ── ADMIN FAB ───────────────────────────── */
+    .admin-floating-btn {
+      position: fixed;
+      bottom: 28px; right: 28px;
+      z-index: 900;
+      width: 46px; height: 46px;
+      border-radius: 50%;
+      background: #c8372d;
+      color: #fff;
+      border: none;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 4px 20px rgba(200,55,45,.4);
+      transition: background 0.15s, transform 0.15s;
+    }
+    .admin-floating-btn:hover { background: #e8572d; transform: scale(1.08); }
+    .admin-floating-btn mat-icon { font-size: 22px; width: 22px; height: 22px; }
+
+    /* ── RESPONSIVE ─────────────────────────── */
+    @media (max-width: 900px) {
+      .nav-links { display: none; }
+      .btn-sign-in { display: none; }
+      .hamburger { display: flex; }
+    }
+    @media (max-width: 640px) {
+      .auth-shell { grid-template-columns: 1fr; }
+      .auth-brand { display: none; }
     }
   `]
 })
@@ -956,13 +661,11 @@ export class NavbarComponent implements OnInit {
   showMobileMenu = false;
   isAdmin = false;
 
-  // Login modal properties
   showLogin = false;
   isLoginView = true;
   captchaCode = '';
   captchaInput = '';
 
-  // Auth feedback states
   loginLoading = false;
   registerLoading = false;
   loginError = '';
@@ -972,39 +675,25 @@ export class NavbarComponent implements OnInit {
   @HostListener('window:scroll', [])
   onWindowScroll() {
     const currentScrollY = window.scrollY;
-
-    // Update scrolled state for styling
-    this.isScrolled = currentScrollY > 50;
-
-    // Show navbar at the very top
+    this.isScrolled = currentScrollY > 80;
     if (currentScrollY < 10) {
       this.isNavVisible = true;
-    }
-    // Hide navbar when scrolling down, show when scrolling up
-    else if (currentScrollY > this.lastScrollY && currentScrollY > 100) {
-      // Scrolling down - hide navbar
+    } else if (currentScrollY > this.lastScrollY && currentScrollY > 120) {
       this.isNavVisible = false;
     } else if (currentScrollY < this.lastScrollY) {
-      // Scrolling up - show navbar
       this.isNavVisible = true;
     }
-
     this.lastScrollY = currentScrollY;
   }
 
   ngOnInit() {
-    // Sync with AuthService login state
     this.authService.isLoggedIn$.subscribe(isLoggedIn => {
       this.isLoggedIn = isLoggedIn;
-      // Check admin status whenever login state changes
       this.checkAdminStatus();
     });
-
     this.authService.currentUser$.subscribe(() => {
       this.checkAdminStatus();
     });
-
-    // Listen for login modal open requests
     this.authService.loginModalOpen$.subscribe(shouldOpen => {
       if (shouldOpen) {
         this.showLogin = true;
@@ -1012,7 +701,6 @@ export class NavbarComponent implements OnInit {
         this.captchaInput = '';
       }
     });
-
     this.generateCaptcha();
   }
 
@@ -1056,19 +744,16 @@ export class NavbarComponent implements OnInit {
     const email = form.value.email;
     const password = form.value.password;
     this.loginError = '';
-
     if (!email || !password || !this.captchaInput) {
       this.loginError = 'Please fill in all fields.';
       return;
     }
-
     if (this.captchaInput.toLowerCase() !== this.captchaCode.toLowerCase()) {
       this.loginError = 'Incorrect captcha. Please try again.';
       this.generateCaptcha();
       this.captchaInput = '';
       return;
     }
-
     this.loginLoading = true;
     this.authService.login({ email, password }).subscribe({
       next: (response) => {
@@ -1099,19 +784,16 @@ export class NavbarComponent implements OnInit {
     const phone = form.value.phone;
     this.registerError = '';
     this.registerSuccess = '';
-
     if (!name || !email || !password || !this.captchaInput) {
       this.registerError = 'Please fill in all required fields.';
       return;
     }
-
     if (this.captchaInput.toLowerCase() !== this.captchaCode.toLowerCase()) {
       this.registerError = 'Incorrect captcha. Please try again.';
       this.generateCaptcha();
       this.captchaInput = '';
       return;
     }
-
     this.registerLoading = true;
     this.authService.register({ name, email, password, phone }).subscribe({
       next: (response) => {
@@ -1121,9 +803,7 @@ export class NavbarComponent implements OnInit {
           form.resetForm();
           this.generateCaptcha();
           this.captchaInput = '';
-          setTimeout(() => {
-            this.switchTab(true);
-          }, 2800);
+          setTimeout(() => { this.switchTab(true); }, 2800);
         }
       },
       error: (error) => {
@@ -1135,24 +815,9 @@ export class NavbarComponent implements OnInit {
     });
   }
 
-
-
   logout() {
     this.authService.logout();
     this.router.navigate(['/']);
-  }
-
-  scrollToSection(sectionId: string) {
-    if (this.router.url === '/') {
-      document.getElementById(sectionId)?.scrollIntoView({ behavior: 'smooth' });
-      return;
-    }
-
-    this.router.navigate(['/']).then(() => {
-      setTimeout(() => {
-        document.getElementById(sectionId)?.scrollIntoView({ behavior: 'smooth' });
-      }, 100);
-    });
   }
 
   handleProfileClick() {
@@ -1160,7 +825,6 @@ export class NavbarComponent implements OnInit {
       this.router.navigate(['/profile']);
       return;
     }
-
     if (!this.showLogin) {
       this.toggleLogin();
     }
