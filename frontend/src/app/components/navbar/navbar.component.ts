@@ -94,8 +94,8 @@ import { AuthService } from '../../services/auth.service';
         
         <!-- Toggle Tabs -->
         <div class="auth-toggle">
-          <button class="toggle-btn" [class.active]="isLoginView" (click)="isLoginView = true">Login</button>
-          <button class="toggle-btn" [class.active]="!isLoginView" (click)="isLoginView = false">Sign Up</button>
+          <button class="toggle-btn" [class.active]="isLoginView" (click)="switchTab(true)">Login</button>
+          <button class="toggle-btn" [class.active]="!isLoginView" (click)="switchTab(false)">Sign Up</button>
         </div>
 
         <h2 class="modal-title">{{ isLoginView ? 'Welcome Back' : 'Create Account' }}</h2>
@@ -144,9 +144,12 @@ import { AuthService } from '../../services/auth.service';
             </div>
           </div>
           
-          <button type="submit" class="btn btn-primary btn-full">
-            <mat-icon>login</mat-icon>
-            Login
+          <div class="inline-error" *ngIf="loginError">{{ loginError }}</div>
+
+          <button type="submit" class="btn btn-primary btn-full" [disabled]="loginLoading">
+            <span class="btn-spinner" *ngIf="loginLoading"></span>
+            <mat-icon *ngIf="!loginLoading">login</mat-icon>
+            {{ loginLoading ? 'Logging in…' : 'Login' }}
           </button>
         </form>
 
@@ -212,9 +215,13 @@ import { AuthService } from '../../services/auth.service';
             </div>
           </div>
           
-          <button type="submit" class="btn btn-primary btn-full">
-            <mat-icon>person_add</mat-icon>
-            Create Account
+          <div class="inline-error" *ngIf="registerError">{{ registerError }}</div>
+          <div class="inline-success" *ngIf="registerSuccess">{{ registerSuccess }}</div>
+
+          <button type="submit" class="btn btn-primary btn-full" [disabled]="registerLoading">
+            <span class="btn-spinner" *ngIf="registerLoading"></span>
+            <mat-icon *ngIf="!registerLoading">person_add</mat-icon>
+            {{ registerLoading ? 'Creating account…' : 'Create Account' }}
           </button>
         </form>
       </div>
@@ -336,7 +343,7 @@ import { AuthService } from '../../services/auth.service';
 
     .mobile-link:hover {
       color: #dc2626;
-      padding-left: 10px;
+      transform: translateX(8px);
     }
 
     .mobile-actions {
@@ -795,6 +802,52 @@ import { AuthService } from '../../services/auth.service';
     .refresh-btn:hover {
       transform: rotate(180deg);
     }
+
+    /* Inline auth feedback */
+    .inline-error {
+      padding: 10px 14px;
+      background: rgba(220, 38, 38, 0.12);
+      border: 1px solid rgba(220, 38, 38, 0.35);
+      border-radius: 10px;
+      color: #fca5a5;
+      font-size: 0.88rem;
+      line-height: 1.4;
+      margin-bottom: -4px;
+      animation: slideDown 0.2s ease-out;
+    }
+
+    .inline-success {
+      padding: 10px 14px;
+      background: rgba(34, 197, 94, 0.12);
+      border: 1px solid rgba(34, 197, 94, 0.35);
+      border-radius: 10px;
+      color: #86efac;
+      font-size: 0.88rem;
+      line-height: 1.4;
+      margin-bottom: -4px;
+      animation: slideDown 0.2s ease-out;
+    }
+
+    @keyframes slideDown {
+      from { opacity: 0; transform: translateY(-6px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    /* Button loading spinner */
+    .btn-spinner {
+      display: inline-block;
+      width: 16px;
+      height: 16px;
+      border: 2px solid rgba(255, 255, 255, 0.3);
+      border-top-color: white;
+      border-radius: 50%;
+      animation: btn-spin 0.65s linear infinite;
+      flex-shrink: 0;
+    }
+
+    @keyframes btn-spin {
+      to { transform: rotate(360deg); }
+    }
     
     /* Buttons */
     .btn {
@@ -909,6 +962,13 @@ export class NavbarComponent implements OnInit {
   captchaCode = '';
   captchaInput = '';
 
+  // Auth feedback states
+  loginLoading = false;
+  registerLoading = false;
+  loginError = '';
+  registerError = '';
+  registerSuccess = '';
+
   @HostListener('window:scroll', [])
   onWindowScroll() {
     const currentScrollY = window.scrollY;
@@ -933,7 +993,6 @@ export class NavbarComponent implements OnInit {
   }
 
   ngOnInit() {
-    console.log('Navbar initialized');
     // Sync with AuthService login state
     this.authService.isLoggedIn$.subscribe(isLoggedIn => {
       this.isLoggedIn = isLoggedIn;
@@ -963,6 +1022,18 @@ export class NavbarComponent implements OnInit {
       this.generateCaptcha();
       this.captchaInput = '';
     }
+    this.loginError = '';
+    this.registerError = '';
+    this.registerSuccess = '';
+  }
+
+  switchTab(toLogin: boolean) {
+    this.isLoginView = toLogin;
+    this.loginError = '';
+    this.registerError = '';
+    this.registerSuccess = '';
+    this.captchaInput = '';
+    this.generateCaptcha();
   }
 
   toggleMobileMenu() {
@@ -984,28 +1055,27 @@ export class NavbarComponent implements OnInit {
   onLogin(form: any) {
     const email = form.value.email;
     const password = form.value.password;
+    this.loginError = '';
 
-    // Check if fields are filled
     if (!email || !password || !this.captchaInput) {
-      alert('Please fill in all fields.');
+      this.loginError = 'Please fill in all fields.';
       return;
     }
 
-    // Validate captcha (case-insensitive)
     if (this.captchaInput.toLowerCase() !== this.captchaCode.toLowerCase()) {
-      alert('Invalid captcha! Please try again.');
+      this.loginError = 'Incorrect captcha. Please try again.';
       this.generateCaptcha();
       this.captchaInput = '';
       return;
     }
 
-    console.log('Login data:', form.value);
+    this.loginLoading = true;
     this.authService.login({ email, password }).subscribe({
       next: (response) => {
+        this.loginLoading = false;
         if (response.success) {
           this.showLogin = false;
           this.isLoggedIn = true;
-
           if (this.authService.isAdmin()) {
             this.router.navigate(['/admin']);
           } else {
@@ -1014,7 +1084,8 @@ export class NavbarComponent implements OnInit {
         }
       },
       error: (error) => {
-        alert(error.error?.message || 'Login failed. Please check your credentials.');
+        this.loginLoading = false;
+        this.loginError = error.error?.message || 'Login failed. Please check your credentials.';
         this.generateCaptcha();
         this.captchaInput = '';
       }
@@ -1026,34 +1097,38 @@ export class NavbarComponent implements OnInit {
     const email = form.value.email;
     const password = form.value.password;
     const phone = form.value.phone;
+    this.registerError = '';
+    this.registerSuccess = '';
 
-    // Check if fields are filled
     if (!name || !email || !password || !this.captchaInput) {
-      alert('Please fill in all required fields.');
+      this.registerError = 'Please fill in all required fields.';
       return;
     }
 
-    // Validate captcha (case-insensitive)
     if (this.captchaInput.toLowerCase() !== this.captchaCode.toLowerCase()) {
-      alert('Invalid captcha! Please try again.');
+      this.registerError = 'Incorrect captcha. Please try again.';
       this.generateCaptcha();
       this.captchaInput = '';
       return;
     }
 
-    console.log('Register data:', form.value);
+    this.registerLoading = true;
     this.authService.register({ name, email, password, phone }).subscribe({
       next: (response) => {
+        this.registerLoading = false;
         if (response.success) {
-          alert(response.message || 'Registration successful. Please verify your email before logging in.');
-          this.isLoginView = true;
+          this.registerSuccess = response.message || 'Account created! Please verify your email, then log in.';
           form.resetForm();
           this.generateCaptcha();
           this.captchaInput = '';
+          setTimeout(() => {
+            this.switchTab(true);
+          }, 2800);
         }
       },
       error: (error) => {
-        alert(error.error?.message || 'Registration failed. Please try again.');
+        this.registerLoading = false;
+        this.registerError = error.error?.message || 'Registration failed. Please try again.';
         this.generateCaptcha();
         this.captchaInput = '';
       }

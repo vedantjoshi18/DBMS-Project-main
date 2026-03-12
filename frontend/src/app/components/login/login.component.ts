@@ -60,35 +60,54 @@ import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
     </div>
   `,
   styles: [`
-    .login-container { 
-      display: flex; 
-      justify-content: center; 
+    .login-container {
+      display: flex;
+      justify-content: center;
       align-items: center;
       min-height: 100vh;
       padding: 2rem;
     }
-    .login-card { 
+
+    .login-card {
       width: 100%;
-      max-width: 400px; 
+      max-width: 400px;
     }
-    .full-width { 
-      width: 100%; 
-      margin-bottom: 10px; 
+
+    .full-width {
+      width: 100%;
+      margin-bottom: 10px;
     }
+
     .error-message {
-      background-color: #f44336;
-      color: white;
-      padding: 12px;
-      border-radius: 4px;
+      background: rgba(220, 38, 38, 0.12);
+      border: 1px solid rgba(220, 38, 38, 0.35);
+      color: #fca5a5;
+      padding: 10px 14px;
+      border-radius: 10px;
       margin-bottom: 16px;
       font-size: 0.9rem;
+      animation: fadeInErr 0.2s ease-out;
     }
+
+    @keyframes fadeInErr {
+      from { opacity: 0; transform: translateY(-4px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
     .spinner {
       display: inline-block;
       margin-right: 8px;
     }
+
     button {
       position: relative;
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    button:not(:disabled):active {
+      transform: scale(0.97);
+      filter: brightness(0.9);
+      transition-duration: 0.08s;
     }
   `]
 })

@@ -85,6 +85,21 @@ const eventSchema = new mongoose.Schema(
       default: 0,
       min: [0, 'Price cannot be negative']
     },
+    registrationLink: {
+      type: String,
+      trim: true,
+      default: '',
+      validate: {
+        validator: function(value) {
+          if (!value) {
+            return true;
+          }
+
+          return /^https:\/\/(docs\.google\.com\/forms|forms\.gle)\//i.test(value);
+        },
+        message: 'Registration link must be a valid Google Form URL'
+      }
+    },
     image: {
       type: String,
       default: 'default-event.jpg'

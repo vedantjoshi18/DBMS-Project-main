@@ -370,6 +370,11 @@ import { MatIconModule } from '@angular/material/icon';
             </div>
 
             <div class="form-section">
+              <label>Google Form Registration Link</label>
+              <input type="url" formControlName="registrationLink" placeholder="https://docs.google.com/forms/...">
+            </div>
+
+            <div class="form-section">
               <label>Location (City)</label>
               <input type="text" formControlName="location" placeholder="e.g. New York">
             </div>
@@ -661,6 +666,19 @@ import { MatIconModule } from '@angular/material/icon';
       gap: 24px;
     }
 
+    @media (max-width: 1200px) {
+      .dashboard-grid { grid-template-columns: repeat(3, 1fr); }
+      .wide-card { grid-column: span 3; }
+    }
+    @media (max-width: 900px) {
+      .dashboard-grid { grid-template-columns: repeat(2, 1fr); }
+      .wide-card { grid-column: span 2; }
+    }
+    @media (max-width: 600px) {
+      .dashboard-grid { grid-template-columns: 1fr; }
+      .wide-card { grid-column: span 1; }
+    }
+
     .stat-card {
       background: rgba(30, 30, 40, 0.4);
       border: 1px solid var(--glass-border);
@@ -778,10 +796,27 @@ import { MatIconModule } from '@angular/material/icon';
     .btn-icon.sm { width: 32px; height: 32px; font-size: 14px; }
     .btn-icon.delete:hover { background: rgba(220, 38, 38, 0.2); color: #ef4444; }
 
+    .progress-cell { display: flex; flex-direction: column; gap: 6px; min-width: 120px; }
+    .progress-bar { width: 100%; height: 6px; background: rgba(255,255,255,.1); border-radius: 999px; overflow: hidden; }
+    .progress-bar .fill { height: 100%; background: linear-gradient(90deg, #dc2626, #ff6b6b); border-radius: 999px; transition: width .4s ease; }
+    .progress-cell .meta { font-size: .8rem; color: var(--text-muted); }
+
     .user-cell { display: flex; align-items: center; gap: 12px; }
     .user-info { display: flex; flex-direction: column; }
     .user-info .name { font-weight: 600; }
     .user-info .email { font-size: 0.85rem; color: var(--text-muted); }
+
+    .role-badge {
+      display: inline-block;
+      padding: 4px 10px;
+      border-radius: 999px;
+      font-size: .75rem;
+      font-weight: 600;
+      background: rgba(255,255,255,.07);
+      border: 1px solid rgba(255,255,255,.15);
+      text-transform: capitalize;
+    }
+    .role-badge.admin { background: rgba(220,38,38,.15); border-color: rgba(220,38,38,.3); color: #f87171; }
 
     /* Modal */
     .modal-overlay {
@@ -794,6 +829,8 @@ import { MatIconModule } from '@angular/material/icon';
 
     .glass-modal {
       width: 600px; max-width: 90%;
+      max-height: 90vh;
+      overflow-y: auto;
       background: #181820;
       border: 1px solid var(--glass-border);
       border-radius: 24px;
@@ -833,6 +870,19 @@ import { MatIconModule } from '@angular/material/icon';
 
     @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
     @keyframes scaleIn { from { opacity: 0; transform: scale(0.95); } to { opacity: 1; transform: scale(1); } }
+
+    /* Responsive sidebar */
+    @media (max-width: 768px) {
+      .admin-layout { flex-direction: column; height: auto; overflow: auto; }
+      .sidebar { width: 100%; flex-direction: row; padding: 16px 20px; align-items: center; }
+      .sidebar-footer { display: none; }
+      .nav-menu { flex-direction: row; flex-wrap: wrap; flex: 1; gap: 4px; }
+      .nav-item { padding: 8px 12px; font-size: .85rem; }
+      .logo-container { margin-bottom: 0; margin-right: 20px; }
+      .main-content { overflow: auto; }
+      .content-scroll { overflow: visible; padding: 20px; }
+      .top-bar { padding: 0 20px; }
+    }
   `]
 })
 export class AdminDashboardComponent implements OnInit {
@@ -877,6 +927,7 @@ export class AdminDashboardComponent implements OnInit {
       isFeatured: [false],
       ticketPrice: [0, [Validators.required, Validators.min(0)]],
       maxAttendees: [100, [Validators.required, Validators.min(1)]],
+      registrationLink: ['', Validators.pattern(/^https:\/\/(docs\.google\.com\/forms|forms\.gle)\//i)],
       location: ['', Validators.required],
       image: ['']
     });
@@ -1018,6 +1069,7 @@ export class AdminDashboardComponent implements OnInit {
         description: event.description,
         ticketPrice: event.ticketPrice || event.price,
         maxAttendees: event.maxAttendees,
+        registrationLink: event.registrationLink || '',
         organizerGroup: typeof event.organizerGroup === 'string' ? event.organizerGroup : event.organizerGroup?._id || '',
         isHot: event.isHot || false,
         isFeatured: event.isFeatured || false,
@@ -1033,7 +1085,8 @@ export class AdminDashboardComponent implements OnInit {
         category: 'Technical',
         organizerGroup: '',
         isHot: false,
-        isFeatured: false
+        isFeatured: false,
+        registrationLink: ''
       });
     }
   }
@@ -1145,6 +1198,7 @@ export class AdminDashboardComponent implements OnInit {
     const eventData = {
       ...formValue,
       time: timeString,
+      registrationLink: String(formValue.registrationLink || '').trim(),
       location: {
         city: formValue.location,
         venue: 'TBA',

@@ -15,7 +15,7 @@ import { Observable } from 'rxjs';
       <!-- User Profile Section -->
       <div class="profile-header" *ngIf="user$ | async as user">
         <div class="profile-avatar">
-            <span class="avatar-text">{{ user.name?.charAt(0)?.toUpperCase() || 'U' }}</span>
+            <span class="avatar-text">{{ user.name.charAt(0).toUpperCase() || 'U' }}</span>
         </div>
         <div class="profile-info">
           <h1 class="user-name">{{ user.name }}</h1>

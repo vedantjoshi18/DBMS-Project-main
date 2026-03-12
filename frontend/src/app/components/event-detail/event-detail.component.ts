@@ -1,19 +1,17 @@
 import { Component, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { ActivatedRoute, RouterModule, Router } from '@angular/router';
+import { ActivatedRoute, RouterModule } from '@angular/router';
 import { EventService } from '../../services/event.service';
-import { AuthService } from '../../services/auth.service';
-import { Event } from '../../models/event.model';
+import type { Event } from '../../models/event.model';
 import { Observable } from 'rxjs';
-import { MatButtonModule } from '@angular/material/button';
-import { MatIconModule } from '@angular/material/icon';
 
 @Component({
   selector: 'app-event-detail',
   standalone: true,
-  imports: [CommonModule, RouterModule, MatButtonModule, MatIconModule],
+  imports: [CommonModule, RouterModule],
   template: `
-    <div class="event-detail-container" *ngIf="event$ | async as event">
+    <ng-container *ngIf="event$ | async as event; else loading">
+    <div class="event-detail-container">
       <div class="container">
         <!-- Back Button -->
         <a routerLink="/events" class="back-link">
@@ -99,26 +97,59 @@ import { MatIconModule } from '@angular/material/icon';
               </div>
             </div>
             
-            <div class="event-actions">
-              <div class="price-display">
-                <span class="price-label">Ticket Price</span>
-                <span class="price-value">{{ (event.ticketPrice || event.price || 0) | currency }}</span>
+            <div class="registration-panel glass-card">
+              <div class="registration-copy">
+                <span class="price-label">Registration</span>
+                <h3 class="registration-title">Register Through Google Form</h3>
+                <p class="registration-text">
+                  Use the organizer's Google Form to register for this event instead of booking tickets on the website.
+                </p>
+
+                <a *ngIf="event.registrationLink; else noRegistrationLink"
+                   class="btn btn-primary btn-lg"
+                   [href]="event.registrationLink"
+                   target="_blank"
+                   rel="noopener noreferrer">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M14 3h7v7"/>
+                    <path d="M10 14 21 3"/>
+                    <path d="M21 14v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
+                  </svg>
+                  Open Registration Form
+                </a>
+
+                <ng-template #noRegistrationLink>
+                  <div class="registration-pending">
+                    The organizer has not added the Google Form link yet. Please check back soon.
+                  </div>
+                </ng-template>
               </div>
-              
-              <button class="btn btn-primary btn-lg" 
-                      (click)="bookTicket(event)"
-                      [disabled]="event.status !== 'open' && event.status !== 'upcoming'">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                  <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
-                  <polyline points="22 4 12 14.01 9 11.01"/>
-                </svg>
-                Book Tickets Now
-              </button>
+
+              <div class="registration-meta">
+                <span class="registration-note-label">How it works</span>
+                <p class="registration-note">
+                  Registration happens outside the app. Submission confirmation and follow-up details will come directly from the organizer.
+                </p>
+              </div>
             </div>
           </div>
         </div>
       </div>
     </div>
+    </ng-container>
+
+    <ng-template #loading>
+      <div class="skeleton-page">
+        <div class="skeleton-img"></div>
+        <div class="skeleton-body">
+          <div class="skeleton-line short"></div>
+          <div class="skeleton-line medium"></div>
+          <div class="skeleton-line"></div>
+          <div class="skeleton-line medium"></div>
+          <div class="skeleton-line short"></div>
+        </div>
+      </div>
+    </ng-template>
   `,
   styles: [`
     .event-detail-container {
@@ -318,33 +349,65 @@ import { MatIconModule } from '@angular/material/icon';
       color: rgba(255, 255, 255, 0.75);
     }
     
-    /* Actions */
-    .event-actions {
-      display: flex;
-      align-items: center;
+    /* Registration */
+    .registration-panel {
+      display: grid;
+      grid-template-columns: minmax(0, 1.6fr) minmax(220px, 1fr);
       gap: 24px;
-      flex-wrap: wrap;
+      padding: 24px;
+      align-items: start;
     }
-    
-    .price-display {
-      display: flex;
-      flex-direction: column;
+
+    .registration-title {
+      margin: 0 0 10px;
+      font-family: 'Outfit', sans-serif;
+      font-size: 1.35rem;
+      font-weight: 600;
+    }
+
+    .registration-text {
+      margin: 0 0 18px;
+      color: rgba(255, 255, 255, 0.72);
+      line-height: 1.7;
+    }
+
+    .registration-meta {
+      padding: 18px;
+      border-radius: 16px;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      background: rgba(255, 255, 255, 0.04);
+    }
+
+    .registration-note-label {
+      display: inline-block;
+      margin-bottom: 8px;
+      font-size: 0.78rem;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: rgba(255, 255, 255, 0.56);
+    }
+
+    .registration-note {
+      margin: 0;
+      color: rgba(255, 255, 255, 0.72);
+      font-size: 0.93rem;
+      line-height: 1.6;
+    }
+
+    .registration-pending {
+      padding: 14px 16px;
+      border-radius: 12px;
+      border: 1px dashed rgba(255, 255, 255, 0.16);
+      background: rgba(255, 255, 255, 0.03);
+      color: rgba(255, 255, 255, 0.72);
+      line-height: 1.6;
     }
     
     .price-label {
       font-size: 0.85rem;
       color: rgba(255, 255, 255, 0.5);
       margin-bottom: 4px;
-    }
-    
-    .price-value {
-      font-family: 'Outfit', sans-serif;
-      font-size: 2rem;
-      font-weight: 700;
-      background: linear-gradient(135deg, #dc2626 0%, #1a1a1a 100%);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-      background-clip: text;
     }
     
     .btn {
@@ -383,6 +446,12 @@ import { MatIconModule } from '@angular/material/icon';
       font-size: 1rem;
     }
     
+    @media (max-width: 700px) {
+      .registration-panel {
+        grid-template-columns: 1fr;
+      }
+    }
+    
     /* Glass Card */
     .glass-card {
       background: rgba(255, 255, 255, 0.05);
@@ -392,13 +461,57 @@ import { MatIconModule } from '@angular/material/icon';
       border-radius: 20px;
       box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
     }
+
+    .btn-glass {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 8px 18px;
+      background: rgba(255, 255, 255, 0.08);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      border-radius: 10px;
+      color: white;
+      font-size: 0.88rem;
+      font-weight: 600;
+      text-decoration: none;
+      cursor: pointer;
+      transition: background 0.2s ease, border-color 0.2s ease;
+      white-space: nowrap;
+    }
+    .btn-glass:hover {
+      background: rgba(255, 255, 255, 0.14);
+      border-color: rgba(255, 255, 255, 0.35);
+    }
+
+    /* Loading skeleton */
+    .skeleton-page {
+      min-height: 100vh;
+      padding: 140px 24px 80px;
+      max-width: 1200px;
+      margin: 0 auto;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 48px;
+      align-items: start;
+    }
+    @media (max-width: 900px) { .skeleton-page { grid-template-columns: 1fr; } }
+
+    .skeleton-img { height: 400px; border-radius: 20px; background: rgba(255,255,255,.06); animation: shimmer 1.6s infinite; }
+    .skeleton-line { height: 18px; border-radius: 6px; background: rgba(255,255,255,.06); margin-bottom: 14px; animation: shimmer 1.6s infinite; }
+    .skeleton-line.short { width: 40%; }
+    .skeleton-line.medium { width: 70%; }
+    .skeleton-body { display: flex; flex-direction: column; }
+
+    @keyframes shimmer {
+      0%   { opacity: .5; }
+      50%  { opacity: 1; }
+      100% { opacity: .5; }
+    }
   `]
 })
 export class EventDetailComponent {
   route = inject(ActivatedRoute);
-  router = inject(Router);
   eventService = inject(EventService);
-  authService = inject(AuthService);
   event$!: Observable<Event>;
 
   constructor() {
@@ -434,14 +547,6 @@ export class EventDetailComponent {
       return event.time;
     }
     return 'Time TBA';
-  }
-
-  bookTicket(event: Event) {
-    if (this.authService.isAuthenticated()) {
-      this.router.navigate(['/book', event._id || event.id]);
-    } else {
-      this.authService.openLoginModal();
-    }
   }
 
   isOrganizerObject(value: unknown): value is { name: string; slug: string; type: 'club' | 'department'; image?: string } {

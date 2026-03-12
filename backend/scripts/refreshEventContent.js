@@ -6,51 +6,63 @@ const OrganizerGroup = require('../src/models/OrganizerGroup');
 const eventContentByTitle = {
   'HackSprint 2026': {
     description: 'A 24-hour code sprint where teams prototype impactful campus solutions in AI, productivity, and student life.',
-    image: 'https://images.unsplash.com/photo-1518773553398-650c184e0bb3?w=1400'
+    image: 'https://images.unsplash.com/photo-1518773553398-650c184e0bb3?w=1400',
+    registrationLink: 'https://docs.google.com/forms/d/e/1FAIpQLScodingclub-hacksprint/viewform'
   },
   'Campus PhotoWalk': {
     description: 'Golden-hour guided photowalk across iconic campus spots with mini challenges on composition and storytelling.',
-    image: 'https://images.unsplash.com/photo-1452587925148-ce544e77e70d?w=1400'
+    image: 'https://images.unsplash.com/photo-1452587925148-ce544e77e70d?w=1400',
+    registrationLink: 'https://docs.google.com/forms/d/e/1FAIpQLSphoto-club-photowalk/viewform'
   },
   RoboWars: {
     description: 'Design, battle, and outsmart in high-energy robot rounds judged on agility, control, and innovation.',
-    image: 'https://images.unsplash.com/photo-1581092580497-e0d23cbdf1dc?w=1400'
+    image: 'https://images.unsplash.com/photo-1581092580497-e0d23cbdf1dc?w=1400',
+    registrationLink: 'https://docs.google.com/forms/d/e/1FAIpQLSrobotics-robowars/viewform'
   },
   'Open Mic Evening': {
     description: 'An evening of spoken word, poetry, and acoustic performances that celebrates student voices and stories.',
-    image: 'https://images.unsplash.com/photo-1516280440614-37939bbacd81?w=1400'
+    image: 'https://images.unsplash.com/photo-1516280440614-37939bbacd81?w=1400',
+    registrationLink: 'https://docs.google.com/forms/d/e/1FAIpQLSliterary-openmic/viewform'
   },
   'Street Play Showcase': {
     description: 'Powerful stage-in-the-round performances focused on social themes, student expression, and public dialogue.',
-    image: 'https://images.unsplash.com/photo-1503095396549-807759245b35?w=1400'
+    image: 'https://images.unsplash.com/photo-1503095396549-807759245b35?w=1400',
+    registrationLink: 'https://docs.google.com/forms/d/e/1FAIpQLSdrama-streetplay/viewform'
   },
   'Battle of Bands': {
     description: 'Campus bands compete live across indie, rock, and fusion sets in a high-voltage night finale.',
-    image: 'https://images.unsplash.com/photo-1501386761578-eac5c94b800a?w=1400'
+    image: 'https://images.unsplash.com/photo-1501386761578-eac5c94b800a?w=1400',
+    registrationLink: 'https://docs.google.com/forms/d/e/1FAIpQLSmusic-battleofbands/viewform'
   },
   'Startup Pitch Day': {
     description: 'Early-stage founders pitch to mentors and investors for incubation support, funding feedback, and mentorship.',
-    image: 'https://images.unsplash.com/photo-1552664730-d307ca884978?w=1400'
+    image: 'https://images.unsplash.com/photo-1552664730-d307ca884978?w=1400',
+    registrationLink: 'https://docs.google.com/forms/d/e/1FAIpQLSecell-startuppitch/viewform'
   },
   'Green Campus Drive': {
     description: 'Join the sustainability challenge with tree-planting, waste-segmentation games, and eco-volunteering tasks.',
-    image: 'https://images.unsplash.com/photo-1498928715928-f21b8f5f5f1c?w=1400'
+    image: 'https://images.unsplash.com/photo-1498928715928-f21b8f5f5f1c?w=1400',
+    registrationLink: 'https://docs.google.com/forms/d/e/1FAIpQLSgreenclub-drive/viewform'
   },
   'AI Colloquium': {
     description: 'Faculty and industry experts unpack applied AI, responsible systems, and real-world deployment case studies.',
-    image: 'https://images.unsplash.com/photo-1677442136019-21780ecad995?w=1400'
+    image: 'https://images.unsplash.com/photo-1677442136019-21780ecad995?w=1400',
+    registrationLink: 'https://docs.google.com/forms/d/e/1FAIpQLScsdept-ai-colloquium/viewform'
   },
   'Embedded Systems Workshop': {
     description: 'Hands-on circuit design and microcontroller prototyping session with guided debugging and hardware demos.',
-    image: 'https://images.unsplash.com/photo-1518770660439-4636190af475?w=1400'
+    image: 'https://images.unsplash.com/photo-1518770660439-4636190af475?w=1400',
+    registrationLink: 'https://docs.google.com/forms/d/e/1FAIpQLSecedept-embedded/viewform'
   },
   'CAD Design Masterclass': {
     description: 'From sketch to simulation: advanced CAD modeling workflows for real mechanical design challenges.',
-    image: 'https://images.unsplash.com/photo-1581093458791-9f3c3900df4b?w=1400'
+    image: 'https://images.unsplash.com/photo-1581093458791-9f3c3900df4b?w=1400',
+    registrationLink: 'https://docs.google.com/forms/d/e/1FAIpQLSmech-cad-masterclass/viewform'
   },
   'Marketing Summit': {
     description: 'Learn growth strategy, brand storytelling, and digital campaign planning from top practitioners.',
-    image: 'https://images.unsplash.com/photo-1552581234-26160f608093?w=1400'
+    image: 'https://images.unsplash.com/photo-1552581234-26160f608093?w=1400',
+    registrationLink: 'https://docs.google.com/forms/d/e/1FAIpQLSbbadept-marketing-summit/viewform'
   }
 };
 
@@ -81,10 +93,12 @@ async function refreshEventContent() {
       const fallbackDescription = fallbackByCategory[event.category] || fallbackByCategory.Other;
       const nextDescription = predefined.description || fallbackDescription;
       const nextImage = predefined.image || event.image;
+      const nextRegistrationLink = predefined.registrationLink || event.registrationLink || '';
 
       const updates = {
         description: nextDescription,
-        image: nextImage
+        image: nextImage,
+        registrationLink: nextRegistrationLink
       };
 
       if (event.organizerGroup && !event.organizerGroupType) {

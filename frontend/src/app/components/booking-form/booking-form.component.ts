@@ -1,4 +1,4 @@
-import { Component, inject } from '@angular/core';
+import { Component, inject, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
@@ -38,9 +38,10 @@ import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
             </div>
           </div>
 
-          <button type="submit" [disabled]="bookingForm.invalid || loading || !eventId" class="submit-btn">
+          <button type="submit" [disabled]="bookingForm.invalid || loading || !eventId" class="submit-btn" [class.loading]="loading">
+            <span class="btn-spinner-booking" *ngIf="loading"></span>
             <span *ngIf="!loading">Confirm Booking</span>
-            <span *ngIf="loading">Processing...</span>
+            <span *ngIf="loading">Processing…</span>
             <mat-icon *ngIf="!loading">arrow_forward</mat-icon>
           </button>
         </form>
@@ -210,10 +211,36 @@ import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
       box-shadow: 0 10px 20px -10px rgba(124, 58, 237, 0.5);
     }
 
+    .submit-btn:not(:disabled):active {
+      transform: scale(0.97);
+      filter: brightness(0.9);
+      transition-duration: 0.08s;
+    }
+
     .submit-btn:disabled {
       opacity: 0.5;
       cursor: not-allowed;
       background: #374151;
+    }
+
+    .submit-btn.loading {
+      pointer-events: none;
+      opacity: 0.8;
+    }
+
+    .btn-spinner-booking {
+      display: inline-block;
+      width: 18px;
+      height: 18px;
+      border: 2px solid rgba(255, 255, 255, 0.3);
+      border-top-color: white;
+      border-radius: 50%;
+      animation: booking-spin 0.65s linear infinite;
+      flex-shrink: 0;
+    }
+
+    @keyframes booking-spin {
+      to { transform: rotate(360deg); }
     }
 
     @keyframes fadeIn {
@@ -236,7 +263,7 @@ import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
     }
   `]
 })
-export class BookingFormComponent {
+export class BookingFormComponent implements OnInit {
   fb = inject(FormBuilder);
   route = inject(ActivatedRoute);
   router = inject(Router);

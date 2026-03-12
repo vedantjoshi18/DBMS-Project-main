@@ -9,6 +9,7 @@ export interface Event {
   category: 'Technical' | 'Cultural' | 'Sports' | 'Academic' | 'Workshop' | 'Seminar' | 'Competition' | 'Social' | 'Other';
   ticketPrice: number;
   price?: number; // For backward compatibility
+  registrationLink?: string;
   description: string;
   image: string;
   isFeatured?: boolean;

@@ -63,33 +63,19 @@ import { OrganizerGroup } from '../../models/organizer-group.model';
           </div>
         </div>
         <div class="hero-visual animate-on-load delay-2">
-          <div class="hero-card hero-card-1">
-            <div class="card-image" style="background: linear-gradient(135deg, #dc2626 0%, #1a1a1a 100%);">
-              <span class="card-icon">🎵</span>
+          <a class="hero-card"
+             *ngFor="let event of heroEvents; let i = index"
+             [routerLink]="['/event', event._id || event.id]"
+             [ngClass]="'hero-card-' + (i + 1)">
+            <div class="card-image">
+              <img [src]="event.image" [alt]="event.title">
+              <span class="card-category">{{ event.category }}</span>
             </div>
             <div class="card-info">
-              <h4>Summer Music Fest</h4>
-              <p>August 15, 2026</p>
+              <h4>{{ event.title }}</h4>
+              <p>{{ event.date | date:'longDate' }}</p>
             </div>
-          </div>
-          <div class="hero-card hero-card-2">
-            <div class="card-image" style="background: linear-gradient(135deg, #ff4d4d 0%, #dc2626 100%);">
-              <span class="card-icon">🎨</span>
-            </div>
-            <div class="card-info">
-              <h4>Art Exhibition Week</h4>
-              <p>September 3, 2026</p>
-            </div>
-          </div>
-          <div class="hero-card hero-card-3">
-            <div class="card-image" style="background: linear-gradient(135deg, #ef4444 0%, #b91c1c 100%);">
-              <span class="card-icon">💻</span>
-            </div>
-            <div class="card-info">
-              <h4>Tech Conference</h4>
-              <p>October 20, 2026</p>
-            </div>
-          </div>
+          </a>
         </div>
       </div>
     </section>
@@ -738,6 +724,7 @@ import { OrganizerGroup } from '../../models/organizer-group.model';
     
     .hero-card {
       position: absolute;
+      display: block;
       background: rgba(255, 255, 255, 0.05);
       backdrop-filter: blur(20px);
       border: 1px solid rgba(255, 255, 255, 0.1);
@@ -746,6 +733,7 @@ import { OrganizerGroup } from '../../models/organizer-group.model';
       box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
       transition: all 0.3s ease;
       animation: cardFloat 6s infinite ease-in-out;
+      text-decoration: none;
     }
     
     .hero-card:hover {
@@ -762,16 +750,43 @@ import { OrganizerGroup } from '../../models/organizer-group.model';
     }
     
     .hero-card .card-image {
+      position: relative;
       width: 180px;
       height: 100px;
       border-radius: 12px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
+      overflow: hidden;
       margin-bottom: 12px;
     }
-    
-    .card-icon { font-size: 2.5rem; }
+
+    .hero-card .card-image img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+
+    .hero-card .card-image::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(180deg, rgba(16, 16, 16, 0.08) 0%, rgba(16, 16, 16, 0.38) 100%);
+    }
+
+    .card-category {
+      position: absolute;
+      top: 10px;
+      left: 10px;
+      z-index: 1;
+      padding: 5px 10px;
+      border-radius: 999px;
+      background: rgba(0, 0, 0, 0.42);
+      border: 1px solid rgba(255, 255, 255, 0.16);
+      font-size: 0.68rem;
+      font-weight: 600;
+      letter-spacing: 0.04em;
+      color: white;
+      text-transform: uppercase;
+    }
     
     .hero-card .card-info h4 {
       font-size: 0.95rem;
@@ -1650,6 +1665,12 @@ export class EventListComponent implements AfterViewInit {
     }
 
     return events;
+  }
+
+  get heroEvents(): any[] {
+    const featuredOrHot = this.allEvents.filter((event) => event.isFeatured || event.isHot);
+    const source = featuredOrHot.length >= 3 ? featuredOrHot : this.allEvents;
+    return source.slice(0, 3);
   }
 
   calculateCategoryCounts() {
