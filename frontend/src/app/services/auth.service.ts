@@ -2,37 +2,37 @@ import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { BehaviorSubject, Observable, tap } from 'rxjs';
 import { environment } from '../../environments/environment';
-import { LoginRequest, RegisterRequest, LoginResponse } from '../models/booking.model';
+import { LoginRequest, RegisterRequest, AuthResponse, AuthUser } from '../models/booking.model';
 
 @Injectable({
   providedIn: 'root'
 })
 export class AuthService {
-  private http = inject(HttpClient);
-  private apiUrl = `${environment.apiUrl}/auth`;
+  private readonly http = inject(HttpClient);
+  private readonly apiUrl = `${environment.apiUrl}/auth`;
+  private readonly authRequestOptions = { withCredentials: true };
 
-  private loggedIn = new BehaviorSubject<boolean>(false);
-  private currentUser = new BehaviorSubject<any>(null);
+  private readonly loggedIn = new BehaviorSubject<boolean>(false);
+  private readonly currentUser = new BehaviorSubject<AuthUser | null>(null);
 
   isLoggedIn$ = this.loggedIn.asObservable();
   currentUser$ = this.currentUser.asObservable();
 
-  private showLoginModal = new BehaviorSubject<boolean>(false);
+  private readonly showLoginModal = new BehaviorSubject<boolean>(false);
   loginModalOpen$ = this.showLoginModal.asObservable();
 
   constructor() {
-    // Check localStorage for persistence
     const token = localStorage.getItem('token');
-    const user = localStorage.getItem('user');
+    const user = this.getStoredUser();
 
     if (token && user) {
       this.loggedIn.next(true);
-      this.currentUser.next(JSON.parse(user));
+      this.currentUser.next(user);
     }
   }
 
-  register(userData: RegisterRequest): Observable<LoginResponse> {
-    return this.http.post<LoginResponse>(`${this.apiUrl}/register`, userData).pipe(
+  register(userData: RegisterRequest): Observable<AuthResponse> {
+    return this.http.post<AuthResponse>(`${this.apiUrl}/register`, userData, this.authRequestOptions).pipe(
       tap(response => {
         if (response.success && response.data.token) {
           this.setAuthData(response.data);
@@ -41,18 +41,24 @@ export class AuthService {
     );
   }
 
-  login(credentials: LoginRequest): Observable<LoginResponse> {
-    return this.http.post<LoginResponse>(`${this.apiUrl}/login`, credentials).pipe(
+  login(credentials: LoginRequest): Observable<AuthResponse> {
+    return this.http.post<AuthResponse>(`${this.apiUrl}/login`, credentials, this.authRequestOptions).pipe(
       tap(response => {
         if (response.success && response.data.token) {
           this.setAuthData(response.data);
         }
       })
+    );
+  }
+
+  refreshSession(): Observable<AuthResponse> {
+    return this.http.post<AuthResponse>(`${this.apiUrl}/refresh`, {}, this.authRequestOptions).pipe(
+      tap(response => this.applyAuthResponse(response))
     );
   }
 
   getMe(): Observable<any> {
-    return this.http.get<any>(`${this.apiUrl}/me`).pipe(
+    return this.http.get<any>(`${this.apiUrl}/me`, this.authRequestOptions).pipe(
       tap(response => {
         if (response.success && response.data) {
           this.currentUser.next(response.data);
@@ -62,11 +68,11 @@ export class AuthService {
   }
 
   logout() {
-    this.loggedIn.next(false);
-    this.currentUser.next(null);
-    localStorage.removeItem('token');
-    localStorage.removeItem('user');
-    localStorage.removeItem('isLoggedIn');
+    this.http.post(`${this.apiUrl}/logout`, {}, this.authRequestOptions).subscribe({
+      error: () => undefined
+    });
+
+    this.clearSession();
   }
 
   isAuthenticated(): boolean {
@@ -77,21 +83,59 @@ export class AuthService {
     return localStorage.getItem('token');
   }
 
-  getCurrentUser(): any {
-    return this.currentUser.value || JSON.parse(localStorage.getItem('user') || 'null');
+  getCurrentUser(): AuthUser | null {
+    return this.currentUser.value || this.getStoredUser();
   }
 
   isAdmin(): boolean {
     const user = this.getCurrentUser();
-    return user && user.role === 'admin';
+    return user?.role === 'admin';
   }
 
-  private setAuthData(data: any) {
-    localStorage.setItem('token', data.token);
-    localStorage.setItem('user', JSON.stringify(data));
+  applyAuthResponse(response: AuthResponse | null) {
+    if (response?.success && response.data?.token) {
+      this.setAuthData(response.data);
+      return;
+    }
+
+    this.clearSession();
+  }
+
+  clearSession() {
+    this.loggedIn.next(false);
+    this.currentUser.next(null);
+    localStorage.removeItem('token');
+    localStorage.removeItem('user');
+    localStorage.removeItem('isLoggedIn');
+  }
+
+  private getStoredUser(): AuthUser | null {
+    const storedUser = localStorage.getItem('user');
+
+    if (!storedUser) {
+      return null;
+    }
+
+    try {
+      return JSON.parse(storedUser) as AuthUser;
+    } catch {
+      this.clearSession();
+      return null;
+    }
+  }
+
+  private setAuthData(data: AuthUser) {
+    const { token, ...user } = data;
+
+    if (!token) {
+      return;
+    }
+
+    localStorage.setItem('token', token);
+    localStorage.setItem('user', JSON.stringify(user));
     localStorage.setItem('isLoggedIn', 'true');
     this.loggedIn.next(true);
-    this.currentUser.next(data);
+    this.currentUser.next(user);
   }
 
   openLoginModal() {

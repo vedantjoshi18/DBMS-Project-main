@@ -1,6 +1,7 @@
 const User = require('../models/User');
 const Event = require('../models/Event');
 const Booking = require('../models/Booking');
+const { logAdminAction } = require('../utils/auditLog');
 
 // @desc    Get dashboard stats
 // @route   GET /api/admin/stats
@@ -68,7 +69,23 @@ exports.deleteUser = async (req, res) => {
             });
         }
 
+        const deletedUserId = user._id;
+        const deletedUserEmail = user.email;
+        const deletedUserRole = user.role;
+
         await user.deleteOne();
+
+        await logAdminAction({
+            admin: req.user,
+            action: 'user.delete',
+            targetType: 'User',
+            targetId: deletedUserId,
+            req,
+            metadata: {
+                deletedUserEmail,
+                deletedUserRole
+            }
+        });
 
         res.status(200).json({
             success: true,

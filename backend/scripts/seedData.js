@@ -12,28 +12,32 @@ const sampleUsers = [
     email: 'john@example.com',
     password: 'password123',
     phone: '9876543210',
-    role: 'user'
+    role: 'user',
+    emailVerified: true
   },
   {
     name: 'Jane Smith',
     email: 'jane@example.com',
     password: 'password123',
     phone: '9876543211',
-    role: 'user'
+    role: 'user',
+    emailVerified: true
   },
   {
     name: 'Admin User',
     email: 'admin@example.com',
     password: 'admin123',
     phone: '9876543212',
-    role: 'admin'
+    role: 'admin',
+    emailVerified: true
   },
   {
     name: 'Alice Johnson',
     email: 'alice@example.com',
     password: 'password123',
     phone: '9876543213',
-    role: 'user'
+    role: 'user',
+    emailVerified: true
   }
 ];
 

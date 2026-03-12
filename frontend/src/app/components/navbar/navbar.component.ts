@@ -1,4 +1,4 @@
-import { Component, inject, HostListener } from '@angular/core';
+import { Component, HostListener, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule, Router } from '@angular/router';
 import { FormsModule } from '@angular/forms';
@@ -893,7 +893,7 @@ import { AuthService } from '../../services/auth.service';
     }
   `]
 })
-export class NavbarComponent {
+export class NavbarComponent implements OnInit {
   authService = inject(AuthService);
   router = inject(Router);
   isLoggedIn = false;
@@ -1045,9 +1045,11 @@ export class NavbarComponent {
     this.authService.register({ name, email, password, phone }).subscribe({
       next: (response) => {
         if (response.success) {
-          this.showLogin = false;
-          this.isLoggedIn = true;
-          this.router.navigate(['/events']);
+          alert(response.message || 'Registration successful. Please verify your email before logging in.');
+          this.isLoginView = true;
+          form.resetForm();
+          this.generateCaptcha();
+          this.captchaInput = '';
         }
       },
       error: (error) => {
@@ -1081,10 +1083,11 @@ export class NavbarComponent {
   handleProfileClick() {
     if (this.isLoggedIn) {
       this.router.navigate(['/profile']);
-    } else {
-      if (!this.showLogin) {
-        this.toggleLogin();
-      }
+      return;
+    }
+
+    if (!this.showLogin) {
+      this.toggleLogin();
     }
   }
 }

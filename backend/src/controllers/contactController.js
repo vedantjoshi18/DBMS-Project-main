@@ -1,4 +1,5 @@
-const nodemailer = require('nodemailer');
+const { sendEmail } = require('../utils/email');
+const { escapeHtml, normalizeText } = require('../utils/sanitize');
 
 // @desc    Send contact email
 // @route   POST /api/contact
@@ -11,29 +12,25 @@ const sendContactEmail = async (req, res) => {
     }
 
     try {
-        // Create reusable transporter object using the default SMTP transport
-        const transporter = nodemailer.createTransport({
-            service: 'gmail',
-            auth: {
-                user: process.env.EMAIL_USER, // your gmail address
-                pass: process.env.EMAIL_APP_PASSWORD // your app password
-            }
-        });
+        const safeName = escapeHtml(normalizeText(name));
+        const safeEmail = escapeHtml(normalizeText(email));
+        const safeSubject = escapeHtml(normalizeText(subject || 'No Subject'));
+        const safeMessage = escapeHtml(normalizeText(message));
 
-        // Send mail with defined transport object
-        const info = await transporter.sendMail({
-            from: `"${name}" <${email}>`, // sender address
-            to: process.env.EMAIL_USER, // list of receivers (the admin)
-            subject: `New Contact Form Submission: ${subject || 'No Subject'}`, // Subject line
-            text: `Name: ${name}\nEmail: ${email}\n\nMessage:\n${message}`, // plain text body
+        const info = await sendEmail({
+            from: process.env.EMAIL_FROM || process.env.EMAIL_USER,
+            replyTo: email,
+            to: process.env.EMAIL_USER,
+            subject: `New Contact Form Submission: ${safeSubject}`,
+            text: `Name: ${normalizeText(name)}\nEmail: ${normalizeText(email)}\n\nMessage:\n${normalizeText(message)}`,
             html: `
         <h3>New Contact Form Submission</h3>
-        <p><strong>Name:</strong> ${name}</p>
-        <p><strong>Email:</strong> ${email}</p>
-        <p><strong>Subject:</strong> ${subject || 'No Subject'}</p>
+        <p><strong>Name:</strong> ${safeName}</p>
+        <p><strong>Email:</strong> ${safeEmail}</p>
+        <p><strong>Subject:</strong> ${safeSubject}</p>
         <p><strong>Message:</strong></p>
-        <p>${message.replace(/\n/g, '<br>')}</p>
-      ` // html body
+                <p>${safeMessage.replaceAll('\n', '<br>')}</p>
+      `
         });
 
         console.log('Message sent: %s', info.messageId);

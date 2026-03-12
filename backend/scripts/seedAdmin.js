@@ -22,7 +22,8 @@ const seedAdmin = async () => {
             email,
             password,
             role: 'admin',
-            phone: '9999999999'
+            phone: '9999999999',
+            emailVerified: true
         };
 
         let user = await User.findOne({ email });
@@ -30,6 +31,7 @@ const seedAdmin = async () => {
         if (user) {
             user.password = password;
             user.role = 'admin';
+            user.emailVerified = true;
             await user.save();
             console.log('User updated to Admin');
         } else {

@@ -712,7 +712,7 @@ export class AdminDashboardComponent implements OnInit {
       title: ['', Validators.required],
       date: ['', Validators.required],
       category: ['Music', Validators.required],
-      description: [''],
+      description: ['', Validators.required],
       ticketPrice: [0, [Validators.required, Validators.min(0)]],
       maxAttendees: [100, [Validators.required, Validators.min(1)]],
       location: ['', Validators.required],
@@ -840,7 +840,12 @@ export class AdminDashboardComponent implements OnInit {
 
   saveEvent() {
     if (this.eventForm.invalid) {
-      console.warn('Form invalid:', this.eventForm.errors);
+      const invalidFields = Object.entries(this.eventForm.controls)
+        .filter(([, control]) => control.invalid)
+        .map(([fieldName]) => fieldName);
+
+      console.warn('Form invalid:', invalidFields);
+      alert(`Please complete the required fields: ${invalidFields.join(', ')}`);
       return;
     }
 
@@ -877,6 +882,11 @@ export class AdminDashboardComponent implements OnInit {
         },
         error: (err) => {
           console.error('Error updating event:', err);
+          if (err.error?.errors?.length) {
+            alert(`Failed to update event: ${err.error.errors.join(', ')}`);
+          } else if (err.error?.message) {
+            alert(`Failed to update event: ${err.error.message}`);
+          }
           this.cdr.detectChanges(); // Update view in case we show error
         }
       });
@@ -891,7 +901,9 @@ export class AdminDashboardComponent implements OnInit {
         },
         error: (err) => {
           console.error('Error creating event:', err);
-          if (err.error?.message) {
+          if (err.error?.errors?.length) {
+            alert(`Failed to create event: ${err.error.errors.join(', ')}`);
+          } else if (err.error?.message) {
             alert(`Failed to create event: ${err.error.message}`);
           }
           this.cdr.detectChanges();

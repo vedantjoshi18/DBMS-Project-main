@@ -1,5 +1,91 @@
+const crypto = require('node:crypto');
 const User = require('../models/User');
-const generateToken = require('../utils/generateToken');
+const RefreshToken = require('../models/RefreshToken');
+const { sendEmail } = require('../utils/email');
+const {
+  REFRESH_COOKIE_NAME,
+  generateAccessToken,
+  generateOpaqueToken,
+  hashToken,
+  getRefreshTokenExpiryMs,
+  getRefreshTokenCookieOptions
+} = require('../utils/generateToken');
+
+const buildAuthPayload = (user, accessToken) => ({
+  _id: user._id,
+  name: user.name,
+  email: user.email,
+  role: user.role,
+  createdAt: user.createdAt,
+  emailVerified: user.emailVerified,
+  token: accessToken
+});
+
+const clearRefreshTokenCookie = (res) => {
+  res.clearCookie(REFRESH_COOKIE_NAME, getRefreshTokenCookieOptions());
+};
+
+const setRefreshTokenCookie = (res, refreshToken) => {
+  res.cookie(REFRESH_COOKIE_NAME, refreshToken, getRefreshTokenCookieOptions());
+};
+
+const buildVerificationUrl = (req, verificationToken) => {
+  if (process.env.EMAIL_VERIFICATION_URL) {
+    return `${process.env.EMAIL_VERIFICATION_URL}${verificationToken}`;
+  }
+
+  return `${req.protocol}://${req.get('host')}/api/auth/verify-email?token=${verificationToken}`;
+};
+
+const sendVerificationEmail = async (user, req, verificationToken) => {
+  const verificationUrl = buildVerificationUrl(req, verificationToken);
+
+  await sendEmail({
+    from: process.env.EMAIL_FROM || process.env.EMAIL_USER,
+    to: user.email,
+    subject: 'Verify your Event Management account',
+    text: `Hi ${user.name},\n\nPlease verify your email by opening this link: ${verificationUrl}\n\nThis link expires in 24 hours.`,
+    html: `
+      <h2>Verify your Event Management account</h2>
+      <p>Hi ${user.name},</p>
+      <p>Please confirm your email address to activate your account.</p>
+      <p><a href="${verificationUrl}">Verify my email</a></p>
+      <p>This link expires in 24 hours.</p>
+    `
+  });
+};
+
+const createStoredRefreshToken = async (user, req, familyId = crypto.randomUUID()) => {
+  const refreshToken = generateOpaqueToken();
+  const refreshTokenDoc = await RefreshToken.create({
+    user: user._id,
+    familyId,
+    tokenHash: hashToken(refreshToken),
+    expiresAt: new Date(Date.now() + getRefreshTokenExpiryMs()),
+    createdByIp: req.ip,
+    userAgent: req.get('user-agent')
+  });
+
+  return {
+    refreshToken,
+    refreshTokenDoc
+  };
+};
+
+const revokeRefreshTokenFamily = async (familyId, reason) => {
+  await RefreshToken.updateMany(
+    {
+      familyId,
+      revokedAt: { $exists: false }
+    },
+    {
+      $set: {
+        revokedAt: new Date(),
+        revokedReason: reason
+      }
+    }
+  );
+};
 
 // @desc    Register new user
 // @route   POST /api/auth/register
@@ -23,23 +109,34 @@ exports.register = async (req, res) => {
       name,
       email,
       password,
-      phone
+      phone,
+      emailVerified: false
     });
 
-    // Generate token
-    const token = generateToken(user._id);
+    const verificationToken = generateOpaqueToken();
+    user.emailVerificationToken = hashToken(verificationToken);
+    user.emailVerificationExpires = new Date(Date.now() + 24 * 60 * 60 * 1000);
+    await user.save();
+
+    try {
+      await sendVerificationEmail(user, req, verificationToken);
+    } catch (emailError) {
+      await user.deleteOne();
+      throw emailError;
+    }
 
     res.status(201).json({
       success: true,
-      message: 'User registered successfully',
+      message: 'Registration successful. Please verify your email before logging in.',
       data: {
         _id: user._id,
         name: user.name,
         email: user.email,
         role: user.role,
         createdAt: user.createdAt,
-        token
-      }
+        emailVerified: user.emailVerified
+      },
+      verificationRequired: true
     });
   } catch (error) {
     console.error('Registration Error:', error);
@@ -58,13 +155,32 @@ exports.login = async (req, res) => {
   try {
     const { email, password } = req.body;
 
-    // Find user and include password field
-    const user = await User.findOne({ email }).select('+password');
+    // Include verification fields so legacy accounts can be upgraded safely.
+    const user = await User.findOne({ email }).select(
+      '+password +emailVerificationToken +emailVerificationExpires'
+    );
 
     if (!user) {
       return res.status(401).json({
         success: false,
         message: 'Invalid email or password'
+      });
+    }
+
+    const isLegacyUser =
+      typeof user.emailVerified !== 'boolean' &&
+      !user.emailVerificationToken &&
+      !user.emailVerificationExpires;
+
+    if (isLegacyUser) {
+      user.emailVerified = true;
+      await user.save({ validateBeforeSave: false });
+    }
+
+    if (!user.emailVerified) {
+      return res.status(403).json({
+        success: false,
+        message: 'Please verify your email address before logging in.'
       });
     }
 
@@ -78,20 +194,15 @@ exports.login = async (req, res) => {
       });
     }
 
-    // Generate token
-    const token = generateToken(user._id);
+    const { refreshToken } = await createStoredRefreshToken(user, req);
+    const accessToken = generateAccessToken(user._id);
+
+    setRefreshTokenCookie(res, refreshToken);
 
     res.status(200).json({
       success: true,
       message: 'Login successful',
-      data: {
-        _id: user._id,
-        name: user.name,
-        email: user.email,
-        role: user.role,
-        createdAt: user.createdAt,
-        token
-      }
+      data: buildAuthPayload(user, accessToken)
     });
   } catch (error) {
     console.error('Login Error:', error);
@@ -119,6 +230,158 @@ exports.getMe = async (req, res) => {
     res.status(500).json({
       success: false,
       message: 'Server error',
+      error: error.message
+    });
+  }
+};
+
+// @desc    Verify user email
+// @route   GET /api/auth/verify-email
+// @access  Public
+exports.verifyEmail = async (req, res) => {
+  try {
+    const { token } = req.query;
+
+    if (!token) {
+      return res.status(400).json({
+        success: false,
+        message: 'Verification token is required'
+      });
+    }
+
+    const user = await User.findOne({
+      emailVerificationToken: hashToken(token),
+      emailVerificationExpires: { $gt: new Date() }
+    }).select('+emailVerificationToken +emailVerificationExpires');
+
+    if (!user) {
+      return res.status(400).json({
+        success: false,
+        message: 'Verification link is invalid or has expired'
+      });
+    }
+
+    user.emailVerified = true;
+    user.emailVerificationToken = undefined;
+    user.emailVerificationExpires = undefined;
+    await user.save();
+
+    res.status(200).json({
+      success: true,
+      message: 'Email verified successfully. You can now log in.'
+    });
+  } catch (error) {
+    console.error('Email verification error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Server error during email verification',
+      error: error.message
+    });
+  }
+};
+
+// @desc    Rotate refresh token and issue a new access token
+// @route   POST /api/auth/refresh
+// @access  Public
+exports.refreshAccessToken = async (req, res) => {
+  try {
+    const incomingRefreshToken = req.cookies[REFRESH_COOKIE_NAME];
+
+    if (!incomingRefreshToken) {
+      return res.status(401).json({
+        success: false,
+        message: 'Refresh token is missing'
+      });
+    }
+
+    const currentToken = await RefreshToken.findOne({
+      tokenHash: hashToken(incomingRefreshToken)
+    }).populate('user');
+
+    if (!currentToken) {
+      clearRefreshTokenCookie(res);
+      return res.status(401).json({
+        success: false,
+        message: 'Refresh token is invalid'
+      });
+    }
+
+    if (currentToken.revokedAt || currentToken.expiresAt <= new Date()) {
+      await revokeRefreshTokenFamily(currentToken.familyId, 'refresh token reuse detected');
+      clearRefreshTokenCookie(res);
+      return res.status(401).json({
+        success: false,
+        message: 'Refresh token is no longer valid'
+      });
+    }
+
+    if (!currentToken.user?.emailVerified) {
+      clearRefreshTokenCookie(res);
+      return res.status(401).json({
+        success: false,
+        message: 'User is not authorized'
+      });
+    }
+
+    const { refreshToken, refreshTokenDoc } = await createStoredRefreshToken(
+      currentToken.user,
+      req,
+      currentToken.familyId
+    );
+
+    currentToken.revokedAt = new Date();
+    currentToken.revokedReason = 'rotated';
+    currentToken.replacedByToken = refreshTokenDoc._id;
+    currentToken.lastUsedAt = new Date();
+    await currentToken.save();
+
+    setRefreshTokenCookie(res, refreshToken);
+
+    res.status(200).json({
+      success: true,
+      message: 'Access token refreshed successfully',
+      data: buildAuthPayload(currentToken.user, generateAccessToken(currentToken.user._id))
+    });
+  } catch (error) {
+    console.error('Refresh token error:', error);
+    clearRefreshTokenCookie(res);
+    res.status(500).json({
+      success: false,
+      message: 'Server error during token refresh',
+      error: error.message
+    });
+  }
+};
+
+// @desc    Logout user and revoke current refresh token
+// @route   POST /api/auth/logout
+// @access  Public
+exports.logout = async (req, res) => {
+  try {
+    const incomingRefreshToken = req.cookies[REFRESH_COOKIE_NAME];
+
+    if (incomingRefreshToken) {
+      await RefreshToken.findOneAndUpdate(
+        { tokenHash: hashToken(incomingRefreshToken) },
+        {
+          revokedAt: new Date(),
+          revokedReason: 'logout'
+        }
+      );
+    }
+
+    clearRefreshTokenCookie(res);
+
+    res.status(200).json({
+      success: true,
+      message: 'Logout successful'
+    });
+  } catch (error) {
+    console.error('Logout error:', error);
+    clearRefreshTokenCookie(res);
+    res.status(500).json({
+      success: false,
+      message: 'Server error during logout',
       error: error.message
     });
   }

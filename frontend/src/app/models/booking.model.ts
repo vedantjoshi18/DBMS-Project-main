@@ -35,16 +35,21 @@ export interface Booking {
   updatedAt?: string | Date;
 }
 
-export interface LoginResponse {
+export interface AuthUser {
+  _id: string;
+  name: string;
+  email: string;
+  role: string;
+  createdAt?: string;
+  emailVerified?: boolean;
+  token?: string;
+}
+
+export interface AuthResponse {
   success: boolean;
   message: string;
-  data: {
-    _id: string;
-    name: string;
-    email: string;
-    role: string;
-    token: string;
-  };
+  data: AuthUser;
+  verificationRequired?: boolean;
 }
 
 export interface RegisterRequest {

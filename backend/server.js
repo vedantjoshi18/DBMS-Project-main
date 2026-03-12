@@ -4,6 +4,8 @@ require('dotenv').config();
 // Import modules
 const express = require('express');
 const cors = require('cors');
+const helmet = require('helmet');
+const cookieParser = require('cookie-parser');
 const connectDB = require('./src/config/database');
 const errorHandler = require('./src/middleware/errorHandler');
 
@@ -14,10 +16,12 @@ connectDB();
 const app = express();
 
 // Middleware
+app.use(helmet());
 app.use(cors({
   origin: process.env.FRONTEND_URL || 'http://localhost:4200',
   credentials: true
 }));
+app.use(cookieParser());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 

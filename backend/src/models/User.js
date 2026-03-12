@@ -16,7 +16,7 @@ const userSchema = new mongoose.Schema(
       lowercase: true,
       trim: true,
       match: [
-        /^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w{2,3})+$/,
+        /^\w+([.-]?\w+)*@\w+([.-]?\w+)*(\.\w{2,3})+$/,
         'Please provide a valid email'
       ]
     },
@@ -34,6 +34,18 @@ const userSchema = new mongoose.Schema(
     phone: {
       type: String,
       trim: true
+    },
+    emailVerified: {
+      type: Boolean,
+      default: false
+    },
+    emailVerificationToken: {
+      type: String,
+      select: false
+    },
+    emailVerificationExpires: {
+      type: Date,
+      select: false
     }
   },
   {

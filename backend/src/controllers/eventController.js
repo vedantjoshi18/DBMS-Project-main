@@ -1,4 +1,5 @@
 const Event = require('../models/Event');
+const { logAdminAction } = require('../utils/auditLog');
 
 // @desc    Create new event
 // @route   POST /api/events
@@ -10,16 +11,34 @@ exports.createEvent = async (req, res) => {
 
     const event = await Event.create(req.body);
 
+    await logAdminAction({
+      admin: req.user,
+      action: 'event.create',
+      targetType: 'Event',
+      targetId: event._id,
+      req,
+      metadata: {
+        title: event.title,
+        category: event.category,
+        date: event.date
+      }
+    });
+
     res.status(201).json({
       success: true,
       message: 'Event created successfully',
       data: event
     });
   } catch (error) {
-    res.status(500).json({
+    const isValidationError = error.name === 'ValidationError';
+
+    res.status(isValidationError ? 400 : 500).json({
       success: false,
-      message: 'Error creating event',
-      error: error.message
+      message: isValidationError ? 'Validation failed' : 'Error creating event',
+      error: error.message,
+      errors: isValidationError
+        ? Object.values(error.errors).map((validationError) => validationError.message)
+        : undefined
     });
   }
 };
@@ -48,8 +67,8 @@ exports.getAllEvents = async (req, res) => {
     }
 
     // Pagination
-    const page = parseInt(req.query.page, 10) || 1;
-    const limit = parseInt(req.query.limit, 10) || 10;
+    const page = Number.parseInt(req.query.page, 10) || 1;
+    const limit = Number.parseInt(req.query.limit, 10) || 10;
     const startIndex = (page - 1) * limit;
 
     // Execute query with population
@@ -140,10 +159,15 @@ exports.updateEvent = async (req, res) => {
       data: event
     });
   } catch (error) {
-    res.status(500).json({
+    const isValidationError = error.name === 'ValidationError';
+
+    res.status(isValidationError ? 400 : 500).json({
       success: false,
-      message: 'Error updating event',
-      error: error.message
+      message: isValidationError ? 'Validation failed' : 'Error updating event',
+      error: error.message,
+      errors: isValidationError
+        ? Object.values(error.errors).map((validationError) => validationError.message)
+        : undefined
     });
   }
 };
@@ -170,7 +194,21 @@ exports.deleteEvent = async (req, res) => {
       });
     }
 
+    const deletedEventId = event._id;
+    const deletedEventTitle = event.title;
+
     await event.deleteOne();
+
+    await logAdminAction({
+      admin: req.user,
+      action: 'event.delete',
+      targetType: 'Event',
+      targetId: deletedEventId,
+      req,
+      metadata: {
+        title: deletedEventTitle
+      }
+    });
 
     res.status(200).json({
       success: true,
