@@ -2,6 +2,8 @@ import { AfterViewInit, Component, ElementRef, HostListener, QueryList, ViewChil
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
 import { FormsModule } from '@angular/forms';
+import { MatFormFieldModule } from '@angular/material/form-field';
+import { MatSelectModule } from '@angular/material/select';
 import { Observable } from 'rxjs';
 import { map } from 'rxjs/operators';
 import { Event } from '../../models/event.model';
@@ -13,7 +15,7 @@ import { CategoryFilterPipe } from '../../pipes/category-filter.pipe';
 @Component({
   selector: 'app-home',
   standalone: true,
-  imports: [CommonModule, RouterModule, FormsModule, CategoryFilterPipe],
+  imports: [CommonModule, RouterModule, FormsModule, MatFormFieldModule, MatSelectModule, CategoryFilterPipe],
   template: `
     <!-- Scroll progress bar -->
     <div class="scroll-progress" [style.transform]="'scaleX(' + scrollProgress + ')'" aria-hidden="true"></div>
@@ -204,18 +206,20 @@ import { CategoryFilterPipe } from '../../pipes/category-filter.pipe';
         </div>
 
         <div class="filter-bar">
-          <select [(ngModel)]="selectedCategory" class="filter-select">
-            <option value="All">All Categories</option>
-            <option value="Technical">Technical</option>
-            <option value="Cultural">Cultural</option>
-            <option value="Sports">Sports</option>
-            <option value="Academic">Academic</option>
-            <option value="Workshop">Workshop</option>
-            <option value="Seminar">Seminar</option>
-            <option value="Competition">Competition</option>
-            <option value="Social">Social</option>
-            <option value="Other">Other</option>
-          </select>
+          <mat-form-field appearance="outline" subscriptSizing="dynamic" class="eventhub-filter-field compact-filter-field">
+            <mat-select [(ngModel)]="selectedCategory" panelClass="eventhub-select-panel">
+              <mat-option value="All">All Categories</mat-option>
+              <mat-option value="Technical">Technical</mat-option>
+              <mat-option value="Cultural">Cultural</mat-option>
+              <mat-option value="Sports">Sports</mat-option>
+              <mat-option value="Academic">Academic</mat-option>
+              <mat-option value="Workshop">Workshop</mat-option>
+              <mat-option value="Seminar">Seminar</mat-option>
+              <mat-option value="Competition">Competition</mat-option>
+              <mat-option value="Social">Social</mat-option>
+              <mat-option value="Other">Other</mat-option>
+            </mat-select>
+          </mat-form-field>
         </div>
 
         <div class="stack-grid">
@@ -759,14 +763,18 @@ import { CategoryFilterPipe } from '../../pipes/category-filter.pipe';
     /* ── ABOUT ───────────────────────────────── */
     .about-inner {
       display: flex;
-      align-items: flex-start;
+      align-items: center;
+      justify-content: center;
       gap: 60px;
+      text-align: center;
     }
     .about-text-block {
       max-width: 680px;
       display: flex;
       flex-direction: column;
       gap: 20px;
+      align-items: center;
+      text-align: center;
     }
     .about-body {
       font-family: 'DM Sans', sans-serif;
@@ -775,6 +783,7 @@ import { CategoryFilterPipe } from '../../pipes/category-filter.pipe';
       line-height: 1.8;
       color: var(--text-secondary);
       max-width: 52ch;
+      margin: 0 auto;
     }
 
     /* ── FOOTER ──────────────────────────────── */
@@ -825,26 +834,40 @@ import { CategoryFilterPipe } from '../../pipes/category-filter.pipe';
     .filter-select {
       appearance: none;
       -webkit-appearance: none;
-      padding: 10px 38px 10px 18px;
+      padding: 12px 50px 12px 18px;
       font-family: 'DM Sans', sans-serif;
       font-size: 0.82rem;
-      font-weight: 500;
-      letter-spacing: 0.04em;
+      font-weight: 600;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
       color: var(--text-primary);
-      background: var(--bg-surface);
-      border: 1px solid var(--border-mid);
+      background:
+        linear-gradient(180deg, rgba(245,240,235,.06), rgba(245,240,235,.02)),
+        var(--bg-surface);
+      border: 1px solid rgba(245,240,235,.14);
       border-radius: 999px;
       cursor: pointer;
-      transition: border-color 0.15s;
-      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%23f5f0eb' stroke-width='2'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
+      transition: border-color 0.2s ease, background 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%23c8372d' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
       background-repeat: no-repeat;
-      background-position: right 14px center;
+      background-position: right 18px center;
       background-size: 12px;
       min-width: 180px;
+      box-shadow: inset 0 1px 0 rgba(255,255,255,.04), 0 10px 30px rgba(0,0,0,.18);
     }
-    .filter-select:hover { border-color: var(--border-hi); }
-    .filter-select:focus { outline: none; border-color: var(--accent); }
-    .filter-select option { background: var(--bg-surface); color: var(--text-primary); }
+    .filter-select:hover {
+      border-color: rgba(245,240,235,.28);
+      background:
+        linear-gradient(180deg, rgba(245,240,235,.09), rgba(245,240,235,.03)),
+        var(--bg-surface);
+      transform: translateY(-1px);
+    }
+    .filter-select:focus {
+      outline: none;
+      border-color: rgba(200,55,45,.7);
+      box-shadow: 0 0 0 4px rgba(200,55,45,.12), inset 0 1px 0 rgba(255,255,255,.05), 0 12px 30px rgba(0,0,0,.24);
+    }
+    .filter-select option { background: #181818; color: var(--text-primary); }
 
     /* ── KEYFRAMES ───────────────────────────── */
     @keyframes fadeUp {

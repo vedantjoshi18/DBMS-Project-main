@@ -42,6 +42,10 @@ export const routes: Routes = [
     loadComponent: () => import('./components/login/login.component').then((m) => m.LoginComponent)
   },
   {
+    path: 'reset-password',
+    loadComponent: () => import('./components/reset-password/reset-password.component').then((m) => m.ResetPasswordComponent)
+  },
+  {
     path: 'book/:id',
     loadComponent: () => import('./components/booking-form/booking-form.component').then((m) => m.BookingFormComponent),
     canActivate: [authGuard]

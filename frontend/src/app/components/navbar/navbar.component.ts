@@ -1,5 +1,6 @@
 import { Component, HostListener, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { ActivatedRoute } from '@angular/router';
 import { RouterModule, Router } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { MatIconModule } from '@angular/material/icon';
@@ -86,15 +87,16 @@ import { AuthService } from '../../services/auth.service';
           </button>
 
           <div class="auth-tabs">
-            <button class="auth-tab" [class.active]="isLoginView" (click)="switchTab(true)">Login</button>
-            <button class="auth-tab" [class.active]="!isLoginView" (click)="switchTab(false)">Sign Up</button>
+            <button class="auth-tab" [class.active]="authMode === 'login'" (click)="switchTab('login')">Login</button>
+            <button class="auth-tab" [class.active]="authMode === 'register'" (click)="switchTab('register')">Sign Up</button>
+            <button class="auth-tab auth-tab-inline" *ngIf="authMode === 'forgot'" [class.active]="true">Reset</button>
           </div>
 
-          <h2 class="auth-heading">{{ isLoginView ? 'Welcome back' : 'Create account' }}</h2>
-          <p class="auth-sub">{{ isLoginView ? 'Enter your credentials to continue.' : 'Join to explore campus events.' }}</p>
+          <h2 class="auth-heading">{{ getAuthHeading() }}</h2>
+          <p class="auth-sub">{{ getAuthSubheading() }}</p>
 
           <!-- Login Form -->
-          <form *ngIf="isLoginView" #loginForm="ngForm" (ngSubmit)="onLogin(loginForm)" class="auth-form">
+          <form *ngIf="authMode === 'login'" #loginForm="ngForm" (ngSubmit)="onLogin(loginForm)" class="auth-form">
             <div class="field-wrap">
               <input type="email" name="email" ngModel required placeholder=" " id="lf-email" autocomplete="email">
               <label for="lf-email">Email</label>
@@ -114,14 +116,29 @@ import { AuthService } from '../../services/auth.service';
               </div>
             </div>
             <div class="inline-error" *ngIf="loginError">{{ loginError }}</div>
+            <button type="button" class="auth-link" (click)="switchTab('forgot')">Forgot password?</button>
             <button type="submit" class="btn-filled btn-full-auth" [disabled]="loginLoading">
               <span class="btn-spinner" *ngIf="loginLoading"></span>
               {{ loginLoading ? 'Logging in…' : 'Login' }}
             </button>
           </form>
 
+          <form *ngIf="authMode === 'forgot'" #forgotForm="ngForm" (ngSubmit)="onForgotPassword(forgotForm)" class="auth-form">
+            <div class="field-wrap">
+              <input type="email" name="email" ngModel required placeholder=" " id="fp-email" autocomplete="email">
+              <label for="fp-email">Email</label>
+            </div>
+            <div class="inline-error" *ngIf="forgotPasswordError">{{ forgotPasswordError }}</div>
+            <div class="inline-success" *ngIf="forgotPasswordSuccess">{{ forgotPasswordSuccess }}</div>
+            <button type="submit" class="btn-filled btn-full-auth" [disabled]="forgotPasswordLoading">
+              <span class="btn-spinner" *ngIf="forgotPasswordLoading"></span>
+              {{ forgotPasswordLoading ? 'Sending reset link…' : 'Send reset link' }}
+            </button>
+            <button type="button" class="auth-link auth-link-center" (click)="switchTab('login')">Back to login</button>
+          </form>
+
           <!-- Signup Form -->
-          <form *ngIf="!isLoginView" #signupForm="ngForm" (ngSubmit)="onRegister(signupForm)" class="auth-form">
+          <form *ngIf="authMode === 'register'" #signupForm="ngForm" (ngSubmit)="onRegister(signupForm)" class="auth-form">
             <div class="field-wrap">
               <input type="text" name="name" ngModel required placeholder=" " id="sf-name" autocomplete="name">
               <label for="sf-name">Full Name</label>
@@ -516,40 +533,60 @@ import { AuthService } from '../../services/auth.service';
     .auth-form {
       display: flex;
       flex-direction: column;
-      gap: 16px;
+      gap: 18px;
     }
 
     /* Floating label fields */
     .field-wrap {
       position: relative;
+      border: 1px solid rgba(245,240,235,.09);
+      border-radius: 18px;
+      background: linear-gradient(180deg, rgba(245,240,235,.055), rgba(245,240,235,.018));
+      box-shadow: inset 0 1px 0 rgba(255,255,255,.03), 0 12px 28px rgba(0,0,0,.14);
+      transition: border-color 0.22s ease, background 0.22s ease, box-shadow 0.22s ease, transform 0.22s ease;
     }
     .field-wrap input {
       width: 100%;
       background: transparent;
       border: none;
-      border-bottom: 1px solid rgba(245,240,235,.15);
-      padding: 20px 0 10px;
+      padding: 28px 18px 12px;
       color: #f5f0eb;
       font-family: 'DM Sans', sans-serif;
       font-size: 0.95rem;
-      transition: border-color 0.2s;
+      transition: color 0.2s ease;
       outline: none;
+      border-radius: 18px;
+      box-sizing: border-box;
     }
-    .field-wrap input:focus { border-bottom-color: rgba(245,240,235,.5); }
+    .field-wrap input:-webkit-autofill,
+    .field-wrap input:-webkit-autofill:hover,
+    .field-wrap input:-webkit-autofill:focus {
+      -webkit-text-fill-color: #f5f0eb;
+      -webkit-box-shadow: 0 0 0 1000px #1a1a1a inset;
+      transition: background-color 9999s ease-in-out 0s;
+      caret-color: #f5f0eb;
+      border-radius: 18px;
+    }
+    .field-wrap:focus-within {
+      border-color: rgba(200,55,45,.55);
+      background: linear-gradient(180deg, rgba(200,55,45,.11), rgba(245,240,235,.03));
+      box-shadow: 0 0 0 4px rgba(200,55,45,.12), inset 0 1px 0 rgba(255,255,255,.04), 0 16px 36px rgba(0,0,0,.22);
+      transform: translateY(-1px);
+    }
     .field-wrap input:focus + label,
     .field-wrap input:not(:placeholder-shown) + label {
-      transform: translateY(-22px);
-      font-size: 0.67rem;
-      color: rgba(245,240,235,.4);
-      letter-spacing: 0.12em;
+      transform: translateY(-11px);
+      font-size: 0.64rem;
+      color: rgba(245,240,235,.55);
+      letter-spacing: 0.16em;
     }
     .field-wrap label {
       position: absolute;
-      left: 0;
+      left: 18px;
       top: 18px;
       font-family: 'DM Sans', sans-serif;
-      font-size: 0.85rem;
-      color: rgba(245,240,235,.3);
+      font-size: 0.8rem;
+      color: rgba(245,240,235,.38);
       pointer-events: none;
       transition: transform 0.2s ease, font-size 0.2s ease, color 0.2s ease, letter-spacing 0.2s ease;
     }
@@ -566,9 +603,11 @@ import { AuthService } from '../../services/auth.service';
       align-items: center;
       gap: 10px;
       border: 1px solid rgba(245,240,235,.1);
-      border-radius: 6px;
-      padding: 12px 14px;
-      background: rgba(245,240,235,.03);
+      border-radius: 18px;
+      padding: 16px 18px;
+      min-height: 62px;
+      background: linear-gradient(180deg, rgba(245,240,235,.055), rgba(245,240,235,.018));
+      box-shadow: inset 0 1px 0 rgba(255,255,255,.03), 0 12px 28px rgba(0,0,0,.14);
     }
     .captcha-code {
       font-family: 'Courier New', monospace;
@@ -618,6 +657,20 @@ import { AuthService } from '../../services/auth.service';
       font-size: 0.8rem;
       color: #7ecb7e;
     }
+    .auth-link {
+      align-self: flex-start;
+      background: none;
+      border: none;
+      color: rgba(245,240,235,.56);
+      font-family: 'DM Sans', sans-serif;
+      font-size: 0.78rem;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      cursor: pointer;
+      padding: 0;
+    }
+    .auth-link:hover { color: #f5f0eb; }
+    .auth-link-center { align-self: center; }
 
     /* ── ADMIN FAB ───────────────────────────── */
     .admin-floating-btn {
@@ -653,6 +706,7 @@ import { AuthService } from '../../services/auth.service';
 })
 export class NavbarComponent implements OnInit {
   authService = inject(AuthService);
+  route = inject(ActivatedRoute);
   router = inject(Router);
   isLoggedIn = false;
   isScrolled = false;
@@ -662,15 +716,18 @@ export class NavbarComponent implements OnInit {
   isAdmin = false;
 
   showLogin = false;
-  isLoginView = true;
+  authMode: 'login' | 'register' | 'forgot' = 'login';
   captchaCode = '';
   captchaInput = '';
 
   loginLoading = false;
   registerLoading = false;
+  forgotPasswordLoading = false;
   loginError = '';
   registerError = '';
   registerSuccess = '';
+  forgotPasswordError = '';
+  forgotPasswordSuccess = '';
 
   @HostListener('window:scroll', [])
   onWindowScroll() {
@@ -707,21 +764,20 @@ export class NavbarComponent implements OnInit {
   toggleLogin() {
     this.showLogin = !this.showLogin;
     if (this.showLogin) {
+      this.authMode = 'login';
       this.generateCaptcha();
       this.captchaInput = '';
     }
-    this.loginError = '';
-    this.registerError = '';
-    this.registerSuccess = '';
+    this.clearAuthMessages();
   }
 
-  switchTab(toLogin: boolean) {
-    this.isLoginView = toLogin;
-    this.loginError = '';
-    this.registerError = '';
-    this.registerSuccess = '';
+  switchTab(mode: 'login' | 'register' | 'forgot') {
+    this.authMode = mode;
+    this.clearAuthMessages();
     this.captchaInput = '';
-    this.generateCaptcha();
+    if (mode !== 'forgot') {
+      this.generateCaptcha();
+    }
   }
 
   toggleMobileMenu() {
@@ -738,6 +794,38 @@ export class NavbarComponent implements OnInit {
     for (let i = 0; i < 6; i++) {
       this.captchaCode += chars.charAt(Math.floor(Math.random() * chars.length));
     }
+  }
+
+  clearAuthMessages() {
+    this.loginError = '';
+    this.registerError = '';
+    this.registerSuccess = '';
+    this.forgotPasswordError = '';
+    this.forgotPasswordSuccess = '';
+  }
+
+  getAuthHeading() {
+    if (this.authMode === 'register') {
+      return 'Create account';
+    }
+
+    if (this.authMode === 'forgot') {
+      return 'Reset password';
+    }
+
+    return 'Welcome back';
+  }
+
+  getAuthSubheading() {
+    if (this.authMode === 'register') {
+      return 'Join to explore campus events.';
+    }
+
+    if (this.authMode === 'forgot') {
+      return 'Enter your email and we will send you a secure reset link.';
+    }
+
+    return 'Enter your credentials to continue.';
   }
 
   onLogin(form: any) {
@@ -803,7 +891,7 @@ export class NavbarComponent implements OnInit {
           form.resetForm();
           this.generateCaptcha();
           this.captchaInput = '';
-          setTimeout(() => { this.switchTab(true); }, 2800);
+          setTimeout(() => { this.switchTab('login'); }, 2800);
         }
       },
       error: (error) => {
@@ -811,6 +899,30 @@ export class NavbarComponent implements OnInit {
         this.registerError = error.error?.message || 'Registration failed. Please try again.';
         this.generateCaptcha();
         this.captchaInput = '';
+      }
+    });
+  }
+
+  onForgotPassword(form: any) {
+    const email = form.value.email;
+    this.forgotPasswordError = '';
+    this.forgotPasswordSuccess = '';
+
+    if (!email) {
+      this.forgotPasswordError = 'Please enter your email address.';
+      return;
+    }
+
+    this.forgotPasswordLoading = true;
+    this.authService.requestPasswordReset(email).subscribe({
+      next: (response) => {
+        this.forgotPasswordLoading = false;
+        this.forgotPasswordSuccess = response.message;
+        form.resetForm();
+      },
+      error: (error) => {
+        this.forgotPasswordLoading = false;
+        this.forgotPasswordError = error.error?.message || 'Unable to send reset link right now.';
       }
     });
   }

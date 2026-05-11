@@ -50,6 +50,42 @@ exports.validateLogin = (req, res, next) => {
   next();
 };
 
+exports.validateForgotPassword = (req, res, next) => {
+  const { email } = req.body;
+
+  if (!email?.match(/^\w+([.-]?\w+)*@\w+([.-]?\w+)*(\.\w{2,3})+$/)) {
+    return res.status(400).json({
+      success: false,
+      message: 'Valid email is required'
+    });
+  }
+
+  next();
+};
+
+exports.validateResetPassword = (req, res, next) => {
+  const { token, password } = req.body;
+  const errors = [];
+
+  if (!token || typeof token !== 'string') {
+    errors.push('Reset token is required');
+  }
+
+  if (!password || password.length < 6) {
+    errors.push('Password must be at least 6 characters');
+  }
+
+  if (errors.length > 0) {
+    return res.status(400).json({
+      success: false,
+      message: 'Validation failed',
+      errors
+    });
+  }
+
+  next();
+};
+
 // Validate event creation
 exports.validateEvent = (req, res, next) => {
   const {

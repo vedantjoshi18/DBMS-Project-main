@@ -7,18 +7,88 @@ import * as THREE from 'three';
   standalone: true,
   imports: [CommonModule],
   template: `
+    <div class="fallback-nebula" aria-hidden="true"></div>
+    <div class="fallback-stars layer-a" aria-hidden="true"></div>
+    <div class="fallback-stars layer-b" aria-hidden="true"></div>
     <div #rendererContainer class="renderer-container"></div>
   `,
   styles: [`
+    :host {
+      position: fixed;
+      inset: 0;
+      z-index: 3;
+      pointer-events: none;
+      overflow: hidden;
+    }
+
+    .fallback-nebula {
+      position: absolute;
+      inset: -20%;
+      background:
+        radial-gradient(circle at 20% 20%, rgba(200,55,45,.06), transparent 40%),
+        radial-gradient(circle at 80% 10%, rgba(200,55,45,.05), transparent 38%),
+        radial-gradient(circle at 50% 80%, rgba(245,240,235,.04), transparent 45%);
+      filter: blur(8px);
+      animation: nebulaDrift 28s ease-in-out infinite alternate;
+      opacity: .65;
+      z-index: 1;
+    }
+
+    .fallback-stars {
+      position: absolute;
+      inset: 0;
+      opacity: .45;
+      z-index: 2;
+      background-repeat: repeat;
+      animation: starDrift 42s linear infinite;
+    }
+
+    .fallback-stars.layer-a {
+      background-image:
+        radial-gradient(2px 2px at 12% 18%, rgba(245,240,235,.58), transparent 65%),
+        radial-gradient(1.5px 1.5px at 32% 72%, rgba(245,240,235,.45), transparent 65%),
+        radial-gradient(2px 2px at 54% 26%, rgba(200,55,45,.36), transparent 65%),
+        radial-gradient(1.5px 1.5px at 71% 63%, rgba(245,240,235,.5), transparent 65%),
+        radial-gradient(1.8px 1.8px at 86% 35%, rgba(245,240,235,.5), transparent 65%),
+        radial-gradient(1.5px 1.5px at 94% 82%, rgba(200,55,45,.3), transparent 65%);
+      background-size: 340px 340px;
+    }
+
+    .fallback-stars.layer-b {
+      background-image:
+        radial-gradient(1px 1px at 18% 42%, rgba(245,240,235,.45), transparent 65%),
+        radial-gradient(1px 1px at 44% 12%, rgba(245,240,235,.4), transparent 65%),
+        radial-gradient(1px 1px at 66% 54%, rgba(245,240,235,.42), transparent 65%),
+        radial-gradient(1px 1px at 78% 88%, rgba(245,240,235,.35), transparent 65%),
+        radial-gradient(1px 1px at 92% 26%, rgba(200,55,45,.26), transparent 65%);
+      background-size: 220px 220px;
+      animation-duration: 58s;
+      animation-direction: reverse;
+      opacity: .35;
+    }
+
     .renderer-container {
       position: fixed;
       top: 0;
       left: 0;
       width: 100%;
       height: 100%;
-      z-index: -1;
-      background: #080808;
+      z-index: 3;
+      pointer-events: none;
+      opacity: 0.28;
+      mix-blend-mode: screen;
+      background: transparent;
       overflow: hidden;
+    }
+
+    @keyframes starDrift {
+      from { transform: translate3d(0, 0, 0); }
+      to { transform: translate3d(-120px, -80px, 0); }
+    }
+
+    @keyframes nebulaDrift {
+      from { transform: translate3d(-2%, -1%, 0) scale(1); }
+      to { transform: translate3d(2%, 1%, 0) scale(1.03); }
     }
   `]
 })
@@ -38,7 +108,7 @@ export class ParticleBackgroundComponent implements OnInit, AfterViewInit, OnDes
   private originalPositions!: Float32Array;
   private positions!: Float32Array;
   private velocities!: Float32Array;
-  private count = 1200;
+  private count = 720;
 
   constructor(private ngZone: NgZone) { }
 
@@ -125,11 +195,11 @@ export class ParticleBackgroundComponent implements OnInit, AfterViewInit, OnDes
     // Material
     const sprite = this.getSprite();
     const material = new THREE.PointsMaterial({
-      size: 2.5,
+      size: 1.8,
       map: sprite,
       vertexColors: true,
       transparent: true,
-      opacity: 0.9,
+      opacity: 0.52,
       sizeAttenuation: true,
       blending: THREE.AdditiveBlending,
       depthWrite: false
@@ -242,7 +312,7 @@ export class ParticleBackgroundComponent implements OnInit, AfterViewInit, OnDes
 
       const distSq = (px - cx) ** 2 + (py - cy) ** 2 + (pz - cz) ** 2;
 
-      const repulsionRadius = 3000; // Squared radius (sqrt(3000) ≈ 55)
+      const repulsionRadius = 2200; // Squared radius (sqrt(2200) ≈ 46)
 
       if (distSq < repulsionRadius) {
         // Repel
@@ -252,21 +322,21 @@ export class ParticleBackgroundComponent implements OnInit, AfterViewInit, OnDes
         const angleY = py - cy;
         const angleZ = pz - cz;
 
-        positions[ix] += angleX * force * 0.1;
-        positions[iy] += angleY * force * 0.1;
-        positions[iz] += angleZ * force * 0.1;
+        positions[ix] += angleX * force * 0.055;
+        positions[iy] += angleY * force * 0.055;
+        positions[iz] += angleZ * force * 0.055;
       } else {
         // Return to original
-        positions[ix] += (ox - px) * 0.05;
-        positions[iy] += (oy - py) * 0.05;
-        positions[iz] += (oz - pz) * 0.05;
+        positions[ix] += (ox - px) * 0.03;
+        positions[iy] += (oy - py) * 0.03;
+        positions[iz] += (oz - pz) * 0.03;
       }
     }
 
     (this.particles.geometry.attributes['position'] as THREE.BufferAttribute).needsUpdate = true;
 
     // Slow rotation
-    this.particles.rotation.y += 0.0005;
+    this.particles.rotation.y += 0.00025;
 
     this.renderer.render(this.scene, this.camera);
   }

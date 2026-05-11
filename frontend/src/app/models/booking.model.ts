@@ -52,6 +52,12 @@ export interface AuthResponse {
   verificationRequired?: boolean;
 }
 
+export interface MessageResponse {
+  success: boolean;
+  message: string;
+  errors?: string[];
+}
+
 export interface RegisterRequest {
   name: string;
   email: string;

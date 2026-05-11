@@ -2,7 +2,7 @@ import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { BehaviorSubject, Observable, tap } from 'rxjs';
 import { environment } from '../../environments/environment';
-import { LoginRequest, RegisterRequest, AuthResponse, AuthUser } from '../models/booking.model';
+import { LoginRequest, RegisterRequest, AuthResponse, AuthUser, MessageResponse } from '../models/booking.model';
 
 @Injectable({
   providedIn: 'root'
@@ -49,6 +49,14 @@ export class AuthService {
         }
       })
     );
+  }
+
+  requestPasswordReset(email: string): Observable<MessageResponse> {
+    return this.http.post<MessageResponse>(`${this.apiUrl}/forgot-password`, { email }, this.authRequestOptions);
+  }
+
+  resetPassword(token: string, password: string): Observable<MessageResponse> {
+    return this.http.post<MessageResponse>(`${this.apiUrl}/reset-password`, { token, password }, this.authRequestOptions);
   }
 
   refreshSession(): Observable<AuthResponse> {

@@ -21,7 +21,13 @@ const registerLimiter = buildLimiter(
   5
 );
 
+const passwordResetLimiter = buildLimiter(
+  'Too many password reset attempts. Please try again in 15 minutes.',
+  5
+);
+
 module.exports = {
   loginLimiter,
-  registerLimiter
+  registerLimiter,
+  passwordResetLimiter
 };

@@ -4,13 +4,15 @@ import { RouterModule } from '@angular/router';
 import { EventService } from '../../services/event.service';
 import { CategoryFilterPipe } from '../../pipes/category-filter.pipe';
 import { FormsModule } from '@angular/forms';
+import { MatFormFieldModule } from '@angular/material/form-field';
+import { MatSelectModule } from '@angular/material/select';
 import { OrganizerGroupService } from '../../services/organizer-group.service';
 import { OrganizerGroup } from '../../models/organizer-group.model';
 
 @Component({
   selector: 'app-event-list',
   standalone: true,
-  imports: [CommonModule, RouterModule, CategoryFilterPipe, FormsModule],
+  imports: [CommonModule, RouterModule, CategoryFilterPipe, FormsModule, MatFormFieldModule, MatSelectModule],
   template: `
     <!-- Hero -->
     <section class="hero" id="home">
@@ -52,33 +54,39 @@ import { OrganizerGroup } from '../../models/organizer-group.model';
         <div class="filter-bar scroll-reveal" #scrollSection>
           <div class="filter-group">
             <label class="filter-label">Category</label>
-            <select [(ngModel)]="selectedCategory" class="filter-select">
-              <option value="All">All</option>
-              <option value="Technical">Technical</option>
-              <option value="Cultural">Cultural</option>
-              <option value="Sports">Sports</option>
-              <option value="Academic">Academic</option>
-              <option value="Workshop">Workshop</option>
-              <option value="Seminar">Seminar</option>
-              <option value="Competition">Competition</option>
-              <option value="Social">Social</option>
-              <option value="Other">Other</option>
-            </select>
+            <mat-form-field appearance="outline" subscriptSizing="dynamic" class="eventhub-filter-field">
+              <mat-select [(ngModel)]="selectedCategory" panelClass="eventhub-select-panel">
+                <mat-option value="All">All</mat-option>
+                <mat-option value="Technical">Technical</mat-option>
+                <mat-option value="Cultural">Cultural</mat-option>
+                <mat-option value="Sports">Sports</mat-option>
+                <mat-option value="Academic">Academic</mat-option>
+                <mat-option value="Workshop">Workshop</mat-option>
+                <mat-option value="Seminar">Seminar</mat-option>
+                <mat-option value="Competition">Competition</mat-option>
+                <mat-option value="Social">Social</mat-option>
+                <mat-option value="Other">Other</mat-option>
+              </mat-select>
+            </mat-form-field>
           </div>
           <div class="filter-group">
             <label class="filter-label">Organizer Type</label>
-            <select [(ngModel)]="selectedOrganizerType" (change)="selectedOrganizerGroup = 'All'" class="filter-select">
-              <option value="All">All</option>
-              <option value="club">Clubs</option>
-              <option value="department">Departments</option>
-            </select>
+            <mat-form-field appearance="outline" subscriptSizing="dynamic" class="eventhub-filter-field">
+              <mat-select [(ngModel)]="selectedOrganizerType" (selectionChange)="selectedOrganizerGroup = 'All'" panelClass="eventhub-select-panel">
+                <mat-option value="All">All</mat-option>
+                <mat-option value="club">Clubs</mat-option>
+                <mat-option value="department">Departments</mat-option>
+              </mat-select>
+            </mat-form-field>
           </div>
           <div class="filter-group" *ngIf="filteredGroups.length > 0">
             <label class="filter-label">Organizer</label>
-            <select [(ngModel)]="selectedOrganizerGroup" class="filter-select">
-              <option value="All">All</option>
-              <option *ngFor="let g of filteredGroups" [value]="g._id">{{ g.name }}</option>
-            </select>
+            <mat-form-field appearance="outline" subscriptSizing="dynamic" class="eventhub-filter-field">
+              <mat-select [(ngModel)]="selectedOrganizerGroup" panelClass="eventhub-select-panel">
+                <mat-option value="All">All</mat-option>
+                <mat-option *ngFor="let g of filteredGroups" [value]="g._id">{{ g.name }}</mat-option>
+              </mat-select>
+            </mat-form-field>
           </div>
 
           <span class="results-count" *ngIf="filteredEvents.length > 0">
@@ -140,8 +148,10 @@ import { OrganizerGroup } from '../../models/organizer-group.model';
           </div>
           <input class="cf-input" type="text" [(ngModel)]="contactForm.subject" name="subject" placeholder="Subject">
           <textarea class="cf-input cf-textarea" [(ngModel)]="contactForm.message" name="message" placeholder="Your message" rows="4"></textarea>
+          <div class="cf-feedback cf-success" *ngIf="contactSuccess">{{ contactSuccess }}</div>
+          <div class="cf-feedback cf-error" *ngIf="contactError">{{ contactError }}</div>
           <button type="submit" class="btn-filled" [disabled]="isSubmitting">
-            {{ isSent ? 'Message Sent ✓' : isSubmitting ? 'Sending…' : 'Send Message' }}
+            {{ isSubmitting ? 'Sending…' : 'Send Message' }}
           </button>
         </form>
       </div>
@@ -327,24 +337,40 @@ import { OrganizerGroup } from '../../models/organizer-group.model';
     .filter-select {
       appearance: none;
       -webkit-appearance: none;
-      padding: 9px 36px 9px 16px;
+      padding: 12px 48px 12px 18px;
       font-family: 'DM Sans', sans-serif;
       font-size: 0.82rem;
-      font-weight: 500;
+      font-weight: 600;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
       color: var(--text-primary);
-      background: var(--bg-surface);
-      border: 1px solid var(--border-mid);
+      background:
+        linear-gradient(180deg, rgba(245,240,235,.06), rgba(245,240,235,.02)),
+        var(--bg-surface);
+      border: 1px solid rgba(245,240,235,.14);
       border-radius: 999px;
       cursor: pointer;
-      transition: border-color 0.15s;
-      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%23f5f0eb' stroke-width='2'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
+      transition: border-color 0.2s ease, background 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%23c8372d' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
       background-repeat: no-repeat;
-      background-position: right 12px center;
+      background-position: right 16px center;
       background-size: 12px;
       min-width: 150px;
+      box-shadow: inset 0 1px 0 rgba(255,255,255,.04), 0 10px 30px rgba(0,0,0,.18);
     }
-    .filter-select:focus { outline: none; border-color: var(--accent); }
-    .filter-select option { background: var(--bg-surface); }
+    .filter-select:hover {
+      border-color: rgba(245,240,235,.28);
+      background:
+        linear-gradient(180deg, rgba(245,240,235,.09), rgba(245,240,235,.03)),
+        var(--bg-surface);
+      transform: translateY(-1px);
+    }
+    .filter-select:focus {
+      outline: none;
+      border-color: rgba(200,55,45,.7);
+      box-shadow: 0 0 0 4px rgba(200,55,45,.12), inset 0 1px 0 rgba(255,255,255,.05), 0 12px 30px rgba(0,0,0,.24);
+    }
+    .filter-select option { background: #181818; color: var(--text-primary); }
     .results-count {
       font-family: 'DM Sans', sans-serif;
       font-size: 0.78rem;
@@ -478,19 +504,53 @@ import { OrganizerGroup } from '../../models/organizer-group.model';
     .cf-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
     .cf-input {
       width: 100%;
-      padding: 13px 16px;
-      background: var(--bg-surface);
-      border: 1px solid var(--border-mid);
-      border-radius: 8px;
+      padding: 16px 18px;
+      background: linear-gradient(180deg, rgba(245,240,235,.045), rgba(245,240,235,.015)), var(--bg-surface);
+      border: 1px solid rgba(245,240,235,.12);
+      border-radius: 16px;
       font-family: 'DM Sans', sans-serif;
       font-size: 0.88rem;
       color: var(--text-primary);
-      transition: border-color 0.15s;
+      transition: border-color 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
       box-sizing: border-box;
+      box-shadow: inset 0 1px 0 rgba(255,255,255,.03), 0 12px 28px rgba(0,0,0,.14);
     }
     .cf-input::placeholder { color: var(--text-muted); }
-    .cf-input:focus { outline: none; border-color: var(--accent); }
+    .cf-input:focus {
+      outline: none;
+      border-color: rgba(200,55,45,.65);
+      box-shadow: 0 0 0 4px rgba(200,55,45,.11), inset 0 1px 0 rgba(255,255,255,.04), 0 14px 30px rgba(0,0,0,.2);
+      background: linear-gradient(180deg, rgba(200,55,45,.08), rgba(245,240,235,.02)), var(--bg-surface);
+    }
+    .cf-input:-webkit-autofill,
+    .cf-input:-webkit-autofill:hover,
+    .cf-input:-webkit-autofill:focus,
+    .cf-textarea:-webkit-autofill,
+    .cf-textarea:-webkit-autofill:hover,
+    .cf-textarea:-webkit-autofill:focus {
+      -webkit-text-fill-color: var(--text-primary);
+      -webkit-box-shadow: 0 0 0 1000px #141414 inset, 0 12px 28px rgba(0,0,0,.14);
+      transition: background-color 9999s ease-in-out 0s;
+      caret-color: var(--text-primary);
+    }
     .cf-textarea { resize: vertical; min-height: 120px; }
+    .cf-feedback {
+      font-family: 'DM Sans', sans-serif;
+      font-size: 0.82rem;
+      border-radius: 14px;
+      padding: 12px 14px;
+      border: 1px solid transparent;
+    }
+    .cf-success {
+      color: #a8e5b4;
+      background: rgba(32, 76, 45, .35);
+      border-color: rgba(124, 212, 149, .18);
+    }
+    .cf-error {
+      color: #ffb3b3;
+      background: rgba(92, 30, 30, .34);
+      border-color: rgba(255, 128, 128, .16);
+    }
 
     /* ── Scroll reveal ────────────────────────── */
     .scroll-reveal { opacity: 0; transform: translateY(24px); transition: opacity 0.7s cubic-bezier(0.16,1,0.3,1), transform 0.7s cubic-bezier(0.16,1,0.3,1); }
@@ -522,28 +582,30 @@ export class EventListComponent implements AfterViewInit {
 
   contactForm = { name: '', email: '', subject: '', message: '' };
   isSubmitting = false;
-  isSent = false;
+  contactSuccess = '';
+  contactError = '';
 
   onContactSubmit() {
+    this.contactError = '';
+    this.contactSuccess = '';
+
     if (!this.contactForm.name || !this.contactForm.email || !this.contactForm.message) {
-      alert('Please fill in all required fields');
+      this.contactError = 'Please fill in your name, email, and message.';
       return;
     }
+
     this.isSubmitting = true;
     this.eventService.sendContactMessage(this.contactForm).subscribe({
       next: () => {
         this.isSubmitting = false;
-        this.isSent = true;
         this.contactForm = { name: '', email: '', subject: '', message: '' };
-        setTimeout(() => {
-          alert('Message sent successfully!');
-          setTimeout(() => { this.isSent = false; }, 3000);
-        }, 100);
+        this.contactSuccess = 'Message sent successfully. We will get back to you soon.';
+        setTimeout(() => { this.contactSuccess = ''; }, 4000);
       },
       error: (err) => {
         console.error('Error sending message:', err);
         this.isSubmitting = false;
-        setTimeout(() => alert('Failed to send message. Please try again later.'), 100);
+        this.contactError = err.error?.message || 'Failed to send message. Please try again later.';
       }
     });
   }

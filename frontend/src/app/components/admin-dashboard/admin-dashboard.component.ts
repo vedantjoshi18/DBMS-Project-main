@@ -7,12 +7,14 @@ import { EventService } from '../../services/event.service';
 import { Event } from '../../models/event.model';
 import { OrganizerGroup } from '../../models/organizer-group.model';
 import { RouterModule, Router } from '@angular/router';
+import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatIconModule } from '@angular/material/icon';
+import { MatSelectModule } from '@angular/material/select';
 
 @Component({
   selector: 'app-admin-dashboard',
   standalone: true,
-  imports: [CommonModule, FormsModule, ReactiveFormsModule, MatIconModule, RouterModule],
+  imports: [CommonModule, FormsModule, ReactiveFormsModule, MatFormFieldModule, MatIconModule, MatSelectModule, RouterModule],
   template: `
     <div class="admin-shell">
 
@@ -70,10 +72,6 @@ import { MatIconModule } from '@angular/material/icon';
             <div class="stat-card">
               <span class="stat-label">Bookings</span>
               <span class="stat-num">{{ stats.totalBookings || 0 }}</span>
-            </div>
-            <div class="stat-card">
-              <span class="stat-label">Revenue</span>
-              <span class="stat-num">₹{{ (stats.totalRevenue || 0) | number }}</span>
             </div>
             <div class="stat-card">
               <span class="stat-label">Clubs</span>
@@ -187,17 +185,19 @@ import { MatIconModule } from '@angular/material/icon';
           </div>
           <div class="field">
             <label>Category *</label>
-            <select formControlName="category">
-              <option value="Technical">Technical</option>
-              <option value="Cultural">Cultural</option>
-              <option value="Sports">Sports</option>
-              <option value="Academic">Academic</option>
-              <option value="Workshop">Workshop</option>
-              <option value="Seminar">Seminar</option>
-              <option value="Competition">Competition</option>
-              <option value="Social">Social</option>
-              <option value="Other">Other</option>
-            </select>
+            <mat-form-field appearance="outline" subscriptSizing="dynamic" class="eventhub-admin-field">
+              <mat-select formControlName="category" panelClass="eventhub-select-panel">
+                <mat-option value="Technical">Technical</mat-option>
+                <mat-option value="Cultural">Cultural</mat-option>
+                <mat-option value="Sports">Sports</mat-option>
+                <mat-option value="Academic">Academic</mat-option>
+                <mat-option value="Workshop">Workshop</mat-option>
+                <mat-option value="Seminar">Seminar</mat-option>
+                <mat-option value="Competition">Competition</mat-option>
+                <mat-option value="Social">Social</mat-option>
+                <mat-option value="Other">Other</mat-option>
+              </mat-select>
+            </mat-form-field>
           </div>
           <div class="field full">
             <label>Description *</label>
@@ -205,10 +205,12 @@ import { MatIconModule } from '@angular/material/icon';
           </div>
           <div class="field">
             <label>Organizer Group *</label>
-            <select formControlName="organizerGroup">
-              <option value="">Select group</option>
-              <option *ngFor="let g of groups" [value]="g._id">{{ g.name }} ({{ g.type }})</option>
-            </select>
+            <mat-form-field appearance="outline" subscriptSizing="dynamic" class="eventhub-admin-field">
+              <mat-select formControlName="organizerGroup" panelClass="eventhub-select-panel">
+                <mat-option value="">Select group</mat-option>
+                <mat-option *ngFor="let g of groups" [value]="g._id">{{ g.name }} ({{ g.type }})</mat-option>
+              </mat-select>
+            </mat-form-field>
           </div>
           <div class="field">
             <label>Location *</label>
@@ -260,10 +262,12 @@ import { MatIconModule } from '@angular/material/icon';
           </div>
           <div class="field">
             <label>Type *</label>
-            <select formControlName="type">
-              <option value="club">Club</option>
-              <option value="department">Department</option>
-            </select>
+            <mat-form-field appearance="outline" subscriptSizing="dynamic" class="eventhub-admin-field">
+              <mat-select formControlName="type" panelClass="eventhub-select-panel">
+                <mat-option value="club">Club</mat-option>
+                <mat-option value="department">Department</mat-option>
+              </mat-select>
+            </mat-form-field>
           </div>
           <div class="field">
             <label>Slug *</label>
@@ -578,20 +582,34 @@ import { MatIconModule } from '@angular/material/icon';
       font-size: 0.72rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--text-muted);
     }
     .field input, .field select, .field textarea {
-      background: var(--bg-surface);
-      border: 1px solid var(--border-mid);
-      border-radius: 8px;
-      padding: 10px 14px;
+      background: linear-gradient(180deg, rgba(245,240,235,.05), rgba(245,240,235,.02)), var(--bg-surface);
+      border: 1px solid rgba(245,240,235,.12);
+      border-radius: 14px;
+      padding: 12px 14px;
       font-family: 'DM Sans', sans-serif;
       font-size: 0.88rem;
       color: var(--text-primary);
-      transition: border-color 0.15s;
+      transition: border-color 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
       width: 100%;
       box-sizing: border-box;
+      box-shadow: inset 0 1px 0 rgba(255,255,255,.03), 0 10px 24px rgba(0,0,0,.12);
     }
     .field input::placeholder, .field textarea::placeholder { color: var(--text-muted); }
-    .field input:focus, .field select:focus, .field textarea:focus { outline: none; border-color: var(--accent); }
-    .field select option { background: var(--bg-surface); }
+    .field input:focus, .field select:focus, .field textarea:focus {
+      outline: none;
+      border-color: rgba(200,55,45,.68);
+      box-shadow: 0 0 0 4px rgba(200,55,45,.12), inset 0 1px 0 rgba(255,255,255,.03), 0 12px 30px rgba(0,0,0,.16);
+    }
+    .field select {
+      appearance: none;
+      -webkit-appearance: none;
+      padding-right: 44px;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%23c8372d' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: right 14px center;
+      background-size: 12px;
+    }
+    .field select option { background: #181818; color: var(--text-primary); }
     .field textarea { resize: vertical; }
     .field input[type="checkbox"] { width: auto; }
     .field-hint { font-family: 'DM Sans', sans-serif; font-size: 0.72rem; color: var(--accent); margin-top: 2px; }
@@ -618,7 +636,7 @@ export class AdminDashboardComponent implements OnInit {
   currentView = 'dashboard';
   stats: any = {
     totalEvents: 0, totalUsers: 0, totalBookings: 0,
-    totalRevenue: 0, totalClubs: 0, totalDepartments: 0
+    totalClubs: 0, totalDepartments: 0
   };
   events: Event[] = [];
   users: any[] = [];

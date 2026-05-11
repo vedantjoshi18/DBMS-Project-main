@@ -37,20 +37,47 @@ const buildVerificationUrl = (req, verificationToken) => {
   return `${req.protocol}://${req.get('host')}/api/auth/verify-email?token=${verificationToken}`;
 };
 
+const buildPasswordResetUrl = (req, resetToken) => {
+  if (process.env.PASSWORD_RESET_URL) {
+    return `${process.env.PASSWORD_RESET_URL}${resetToken}`;
+  }
+
+  const frontendUrl = process.env.FRONTEND_URL || `${req.protocol}://${req.get('host')}`;
+  return `${frontendUrl.replace(/\/$/, '')}/reset-password?token=${resetToken}`;
+};
+
 const sendVerificationEmail = async (user, req, verificationToken) => {
   const verificationUrl = buildVerificationUrl(req, verificationToken);
 
   await sendEmail({
     from: process.env.EMAIL_FROM || process.env.EMAIL_USER,
     to: user.email,
-    subject: 'Verify your Event Management account',
+    subject: 'Verify your EventHub account',
     text: `Hi ${user.name},\n\nPlease verify your email by opening this link: ${verificationUrl}\n\nThis link expires in 24 hours.`,
     html: `
-      <h2>Verify your Event Management account</h2>
+      <h2>Verify your EventHub account</h2>
       <p>Hi ${user.name},</p>
       <p>Please confirm your email address to activate your account.</p>
       <p><a href="${verificationUrl}">Verify my email</a></p>
       <p>This link expires in 24 hours.</p>
+    `
+  });
+};
+
+const sendPasswordResetEmail = async (user, req, resetToken) => {
+  const resetUrl = buildPasswordResetUrl(req, resetToken);
+
+  await sendEmail({
+    from: process.env.EMAIL_FROM || process.env.EMAIL_USER,
+    to: user.email,
+    subject: 'Reset your EventHub password',
+    text: `Hi ${user.name},\n\nWe received a request to reset your EventHub password. Open this link to choose a new password: ${resetUrl}\n\nThis link expires in 1 hour. If you did not request this, you can ignore this email.`,
+    html: `
+      <h2>Reset your password</h2>
+      <p>Hi ${user.name},</p>
+      <p>We received a request to reset your EventHub password.</p>
+      <p><a href="${resetUrl}">Choose a new password</a></p>
+      <p>This link expires in 1 hour. If you did not request this, you can ignore this email.</p>
     `
   });
 };
@@ -209,6 +236,89 @@ exports.login = async (req, res) => {
     res.status(500).json({
       success: false,
       message: 'Server error during login',
+      error: error.message
+    });
+  }
+};
+
+// @desc    Request password reset email
+// @route   POST /api/auth/forgot-password
+// @access  Public
+exports.forgotPassword = async (req, res) => {
+  try {
+    const { email } = req.body;
+    const user = await User.findOne({ email }).select('+passwordResetToken +passwordResetExpires');
+
+    if (user) {
+      const resetToken = generateOpaqueToken();
+      user.passwordResetToken = hashToken(resetToken);
+      user.passwordResetExpires = new Date(Date.now() + 60 * 60 * 1000);
+      await user.save({ validateBeforeSave: false });
+
+      try {
+        await sendPasswordResetEmail(user, req, resetToken);
+      } catch (emailError) {
+        user.passwordResetToken = undefined;
+        user.passwordResetExpires = undefined;
+        await user.save({ validateBeforeSave: false });
+        throw emailError;
+      }
+    }
+
+    res.status(200).json({
+      success: true,
+      message: 'If an account exists for that email, a password reset link has been sent.'
+    });
+  } catch (error) {
+    console.error('Forgot password error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Server error during password reset request',
+      error: error.message
+    });
+  }
+};
+
+// @desc    Reset password using token
+// @route   POST /api/auth/reset-password
+// @access  Public
+exports.resetPassword = async (req, res) => {
+  try {
+    const { token, password } = req.body;
+
+    const user = await User.findOne({
+      passwordResetToken: hashToken(token),
+      passwordResetExpires: { $gt: new Date() }
+    }).select('+password +passwordResetToken +passwordResetExpires');
+
+    if (!user) {
+      return res.status(400).json({
+        success: false,
+        message: 'Password reset link is invalid or has expired'
+      });
+    }
+
+    user.password = password;
+    user.passwordResetToken = undefined;
+    user.passwordResetExpires = undefined;
+    await user.save();
+
+    await RefreshToken.updateMany(
+      { user: user._id, revokedAt: { $exists: false } },
+      { $set: { revokedAt: new Date(), revokedReason: 'password reset' } }
+    );
+
+    clearRefreshTokenCookie(res);
+
+    res.status(200).json({
+      success: true,
+      message: 'Password updated successfully. You can now log in with your new password.'
+    });
+  } catch (error) {
+    console.error('Reset password error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Server error during password reset',
       error: error.message
     });
   }

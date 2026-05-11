@@ -218,6 +218,121 @@ body {
 }
 .btn-text::after { content: '→'; margin-left: 6px; transition: margin-left var(--transition-snap); }
 .btn-text:hover { color: var(--text-primary); }
+
+/* ── MATERIAL SELECTS ──────────────────────── */
+.eventhub-filter-field,
+.eventhub-admin-field {
+  width: 100%;
+}
+
+.compact-filter-field {
+  min-width: 210px;
+  max-width: 280px;
+}
+
+.eventhub-filter-field .mat-mdc-text-field-wrapper,
+.eventhub-admin-field .mat-mdc-text-field-wrapper {
+  background:
+    radial-gradient(circle at top left, rgba(200,55,45,.14), transparent 42%),
+    linear-gradient(180deg, rgba(255,255,255,.045), rgba(255,255,255,.01)),
+    #0d0d0d !important;
+  border: 1px solid rgba(200,55,45,.34) !important;
+  border-radius: 999px !important;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.05), inset 0 -10px 24px rgba(0,0,0,.18), 0 10px 30px rgba(0,0,0,.26), 0 0 0 1px rgba(255,255,255,.02) !important;
+  padding: 0 14px !important;
+}
+
+.eventhub-admin-field .mat-mdc-text-field-wrapper {
+  border-radius: 14px !important;
+  background:
+    radial-gradient(circle at top left, rgba(200,55,45,.1), transparent 40%),
+    linear-gradient(180deg, rgba(255,255,255,.04), rgba(255,255,255,.012)),
+    #121212 !important;
+  border-color: rgba(245,240,235,.14) !important;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.03), inset 0 -8px 18px rgba(0,0,0,.14), 0 10px 24px rgba(0,0,0,.12) !important;
+}
+
+.eventhub-filter-field .mdc-notched-outline,
+.eventhub-admin-field .mdc-notched-outline,
+.eventhub-filter-field .mat-mdc-form-field-subscript-wrapper,
+.eventhub-admin-field .mat-mdc-form-field-subscript-wrapper,
+.eventhub-filter-field .mdc-line-ripple,
+.eventhub-admin-field .mdc-line-ripple {
+  display: none !important;
+}
+
+.eventhub-filter-field .mat-mdc-form-field-infix,
+.eventhub-admin-field .mat-mdc-form-field-infix {
+  min-height: auto !important;
+  padding: 12px 0 !important;
+}
+
+.eventhub-filter-field .mat-mdc-select-value,
+.eventhub-admin-field .mat-mdc-select-value,
+.eventhub-filter-field .mat-mdc-select-placeholder,
+.eventhub-admin-field .mat-mdc-select-placeholder {
+  color: var(--text-primary) !important;
+  font-family: var(--font-body) !important;
+}
+
+.eventhub-filter-field .mat-mdc-select-value,
+.eventhub-filter-field .mat-mdc-select-placeholder {
+  font-size: 0.82rem !important;
+  font-weight: 600 !important;
+  letter-spacing: 0.08em !important;
+  text-transform: uppercase !important;
+  text-shadow: 0 1px 0 rgba(0,0,0,.3);
+}
+
+.eventhub-admin-field .mat-mdc-select-value,
+.eventhub-admin-field .mat-mdc-select-placeholder {
+  font-size: 0.88rem !important;
+}
+
+.eventhub-filter-field .mat-mdc-select-arrow,
+.eventhub-admin-field .mat-mdc-select-arrow {
+  color: var(--accent) !important;
+}
+
+.eventhub-filter-field:hover .mat-mdc-text-field-wrapper,
+.eventhub-admin-field:hover .mat-mdc-text-field-wrapper {
+  border-color: rgba(232,87,45,.45) !important;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.05), inset 0 -10px 24px rgba(0,0,0,.18), 0 14px 34px rgba(0,0,0,.32), 0 0 22px rgba(200,55,45,.08) !important;
+}
+
+.eventhub-filter-field.mat-focused .mat-mdc-text-field-wrapper,
+.eventhub-admin-field.mat-focused .mat-mdc-text-field-wrapper {
+  border-color: rgba(232,87,45,.78) !important;
+  box-shadow: 0 0 0 4px rgba(200,55,45,.11), inset 0 1px 0 rgba(255,255,255,.05), inset 0 -10px 24px rgba(0,0,0,.14), 0 16px 36px rgba(0,0,0,.34), 0 0 28px rgba(200,55,45,.14) !important;
+}
+
+.eventhub-select-panel {
+  background: linear-gradient(180deg, rgba(20,20,20,.98), rgba(10,10,10,.98)) !important;
+  border: 1px solid rgba(245,240,235,.1) !important;
+  border-radius: 18px !important;
+  box-shadow: 0 24px 80px rgba(0,0,0,.45) !important;
+  padding: 8px !important;
+}
+
+.eventhub-select-panel .mat-mdc-option {
+  min-height: 42px !important;
+  border-radius: 12px !important;
+  color: var(--text-primary) !important;
+  font-family: var(--font-body) !important;
+  font-size: 0.85rem !important;
+}
+
+.eventhub-select-panel .mat-mdc-option:hover:not(.mdc-list-item--disabled) {
+  background: rgba(245,240,235,.06) !important;
+}
+
+.eventhub-select-panel .mat-mdc-option.mdc-list-item--selected:not(.mdc-list-item--disabled) {
+  background: rgba(200,55,45,.16) !important;
+}
+
+.eventhub-select-panel .mat-pseudo-checkbox {
+  display: none !important;
+}
 .btn-text:hover::after { margin-left: 12px; }
 
 /* Legacy button aliases (keep backward compat) */
